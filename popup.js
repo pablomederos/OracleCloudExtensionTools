@@ -6,25 +6,25 @@
         azureDevOps: {
             id: 'toggle-azure-devops',
             storageKey: 'feature_azure_devops',
-            defaultValue: true
+            defaultValue: false // Default to disabled
         }
     };
 
     // Load saved states
-    function loadFeatureStates() {
-        Object.values(FEATURES).forEach(feature => {
+    async function loadFeatureStates() {
+        for (const feature of Object.values(FEATURES)) {
             const toggle = document.getElementById(feature.id);
             if (toggle) {
-                const savedValue = localStorage.getItem(feature.storageKey);
-                const isEnabled = savedValue !== null ? savedValue === 'true' : feature.defaultValue;
+                const result = await chrome.storage.local.get(feature.storageKey);
+                const isEnabled = result[feature.storageKey] === true || result[feature.storageKey] === 'true';
                 toggle.checked = isEnabled;
             }
-        });
+        }
     }
 
     // Save feature state
-    function saveFeatureState(feature, enabled) {
-        localStorage.setItem(feature.storageKey, enabled.toString());
+    async function saveFeatureState(feature, enabled) {
+        await chrome.storage.local.set({ [feature.storageKey]: enabled });
 
         // Notify content scripts of the change
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -41,8 +41,8 @@
     }
 
     // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-        loadFeatureStates();
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadFeatureStates();
 
         // Setup toggle listeners
         Object.values(FEATURES).forEach(feature => {
