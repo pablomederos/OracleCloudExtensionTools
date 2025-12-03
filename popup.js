@@ -22,19 +22,22 @@
         }
     }
 
-    // Save feature state
+    // Save feature state and sync to page localStorage
     async function saveFeatureState(feature, enabled) {
+        // Save to chrome.storage
         await chrome.storage.local.set({ [feature.storageKey]: enabled });
 
-        // Notify content scripts of the change
+        // Sync to page's localStorage via content script
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    type: 'FEATURE_TOGGLE',
-                    feature: feature.storageKey,
-                    enabled: enabled
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    func: (key, value) => {
+                        localStorage.setItem(key, value.toString());
+                    },
+                    args: [feature.storageKey, enabled]
                 }).catch(() => {
-                    // Ignore errors if content script isn't loaded
+                    // Ignore errors if page isn't loaded
                 });
             }
         });

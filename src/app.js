@@ -40,12 +40,11 @@ const pages = {
 // Init listeners
 initListeners();
 
-async function initListeners() {
+function initListeners() {
     // Initialize Azure DevOps integration (if enabled)
-    const result = await chrome.storage.local.get('feature_azure_devops');
-    const azureDevOpsEnabled = result.feature_azure_devops === true || result.feature_azure_devops === 'true';
+    const azureDevOpsEnabled = localStorage.getItem('feature_azure_devops');
 
-    if (azureDevOpsEnabled) {
+    if (azureDevOpsEnabled === 'true') {
         initAzureDevOps();
     }
 
@@ -160,12 +159,10 @@ function checkCommand() {
             break;
         case `${commands.showDevOpsDialog},${pages.timecardsPage}`:
             // Only show if Azure DevOps is enabled
-            chrome.storage.local.get('feature_azure_devops').then(result => {
-                const azureDevOpsEnabled = result.feature_azure_devops === true || result.feature_azure_devops === 'true';
-                if (azureDevOpsEnabled) {
-                    showDevOpsDialog();
-                }
-            });
+            const azureDevOpsEnabled = localStorage.getItem('feature_azure_devops');
+            if (azureDevOpsEnabled === 'true') {
+                showDevOpsDialog();
+            }
             break;
         case `${commands.saveTimeCard},${pages.timecardsPage}`:
             saveTimecard();
