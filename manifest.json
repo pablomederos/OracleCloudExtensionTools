@@ -3,6 +3,13 @@
     "name": "Oracle Cloud Tools",
     "version": "1.0",
     "description": "Injects helper script into Oracle Cloud.",
+    "permissions": [
+        "storage"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Oracle Cloud Tools"
+    },
     "content_scripts": [
         {
             "matches": [

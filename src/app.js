@@ -41,8 +41,12 @@ const pages = {
 initListeners();
 
 function initListeners() {
-    // Initialize Azure DevOps integration
-    initAzureDevOps();
+    // Initialize Azure DevOps integration (if enabled)
+    const azureDevOpsEnabled = localStorage.getItem('feature_azure_devops');
+    // Default to true if not set (backward compatibility)
+    if (azureDevOpsEnabled !== 'false') {
+        initAzureDevOps();
+    }
 
     // Register key pressed
     document.addEventListener('keydown', onKeyDown);
@@ -154,7 +158,11 @@ function checkCommand() {
             createCommentCommand();
             break;
         case `${commands.showDevOpsDialog},${pages.timecardsPage}`:
-            showDevOpsDialog();
+            // Only show if Azure DevOps is enabled
+            const azureDevOpsEnabled = localStorage.getItem('feature_azure_devops');
+            if (azureDevOpsEnabled !== 'false') {
+                showDevOpsDialog();
+            }
             break;
         case `${commands.saveTimeCard},${pages.timecardsPage}`:
             saveTimecard();
