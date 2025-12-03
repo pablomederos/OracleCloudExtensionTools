@@ -4,8 +4,7 @@
     "version": "1.0",
     "description": "Injects helper script into Oracle Cloud.",
     "permissions": [
-        "storage",
-        "scripting"
+        "storage"
     ],
     "action": {
         "default_popup": "popup.html",

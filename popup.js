@@ -22,23 +22,15 @@
         }
     }
 
-    // Save feature state and sync to page localStorage
+    // Save feature state
     async function saveFeatureState(feature, enabled) {
         // Save to chrome.storage
         await chrome.storage.local.set({ [feature.storageKey]: enabled });
 
-        // Sync to page's localStorage via content script
+        // Reload the page to apply changes
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    func: (key, value) => {
-                        localStorage.setItem(key, value.toString());
-                    },
-                    args: [feature.storageKey, enabled]
-                }).catch(() => {
-                    // Ignore errors if page isn't loaded
-                });
+                chrome.tabs.reload(tabs[0].id);
             }
         });
     }

@@ -1,7 +1,18 @@
 // Loader Script - Injects ES6 modules into the page DOM
 // This runs as a traditional content script and injects module scripts into the page
-; (function () {
+; (async function () {
     'use strict';
+
+    // Load feature flags from chrome.storage
+    const settings = await chrome.storage.local.get('feature_azure_devops');
+    const featureFlags = {
+        azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true'
+    };
+
+    // Inject feature flags as global variable
+    const configScript = document.createElement('script');
+    configScript.textContent = `window.ORACLE_TOOLS_CONFIG = ${JSON.stringify(featureFlags)}; `;
+    (document.head || document.documentElement).appendChild(configScript);
 
     // List of module files to inject in order
     const moduleFiles = [

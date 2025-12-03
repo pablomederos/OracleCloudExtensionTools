@@ -42,9 +42,8 @@ initListeners();
 
 function initListeners() {
     // Initialize Azure DevOps integration (if enabled)
-    const azureDevOpsEnabled = localStorage.getItem('feature_azure_devops');
-
-    if (azureDevOpsEnabled === 'true') {
+    // Config is injected by loader.js as window.ORACLE_TOOLS_CONFIG
+    if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) {
         initAzureDevOps();
     }
 
@@ -159,8 +158,7 @@ function checkCommand() {
             break;
         case `${commands.showDevOpsDialog},${pages.timecardsPage}`:
             // Only show if Azure DevOps is enabled
-            const azureDevOpsEnabled = localStorage.getItem('feature_azure_devops');
-            if (azureDevOpsEnabled === 'true') {
+            if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) {
                 showDevOpsDialog();
             }
             break;
