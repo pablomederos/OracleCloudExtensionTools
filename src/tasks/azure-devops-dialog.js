@@ -67,6 +67,14 @@ function renderTable(workItems) {
 
             const actionTd = document.createElement('td');
 
+            // Add to Time Sheet button
+            const btn = document.createElement('button');
+            btn.textContent = '⏱️';
+            btn.title = 'Add to Time Sheet';
+            btn.className = 'action-btn';
+            btn.onclick = () => addToTimeSheet(id);
+            actionTd.appendChild(btn);
+
             const copyBtn = document.createElement('button');
             copyBtn.textContent = '📋';
             copyBtn.title = 'Copy to Clipboard';
@@ -200,6 +208,13 @@ function createTasksContent(container, dialog) {
 
     const footer = document.createElement('div');
     footer.className = 'footer-actions';
+
+    const addAllButton = document.createElement('button');
+    addAllButton.textContent = 'Add all to Time Sheet';
+    addAllButton.id = 'addAllBtn';
+    addAllButton.className = 'btn-secondary';
+
+    footer.appendChild(addAllButton);
     container.appendChild(footer);
 
     const startDateInput = startGroup.querySelector('input');
@@ -239,6 +254,21 @@ function createTasksContent(container, dialog) {
         } finally {
             searchBtn.textContent = 'Search';
             searchBtn.disabled = false;
+        }
+    };
+
+    addAllButton.onclick = () => {
+        const cachedData = sessionStorage.getItem('devops_tasks_cache');
+        if (cachedData) {
+            sessionStorage.setItem('devOpsCompleteJSON', cachedData);
+            alert('All tasks saved to sessionStorage (devOpsCompleteJSON)!');
+
+            // Close dialog and start check
+            if (dialog) dialog.close();
+
+            startCompletionCheck();
+        } else {
+            alert('No tasks to add.');
         }
     };
 }
@@ -454,8 +484,41 @@ function createAndAppendButton(container) {
     }
 }
 
+// Time sheet integration functions
+function addToTimeSheet(id) {
+    const cachedData = sessionStorage.getItem('devops_tasks_cache');
+    if (cachedData) {
+        const tasks = JSON.parse(cachedData);
+
+        const task = tasks.find(t => t.fields['System.Id'] == id);
+
+        if (task) {
+            sessionStorage.setItem('devOpsRowJSON', JSON.stringify(task));
+
+            const dialog = query(querySelectors.devopsDialog);
+            if (dialog) dialog.close();
+
+            startCompletionCheck();
+        } else {
+            alert('Task not found in cache.');
+        }
+    }
+}
+
+function startCompletionCheck() {
+    sessionStorage.setItem('dataAlreadyInserted', '0');
+
+    const interval = setInterval(() => {
+        const status = sessionStorage.getItem('dataAlreadyInserted');
+
+        if (status === '1') {
+            clearInterval(interval);
+            showDevOpsDialog();
+        }
+    }, 1000);
+}
+
 // Initialize Azure DevOps integration
 export function initAzureDevOps() {
     addDevOpsButton();
 }
-
