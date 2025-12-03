@@ -207,3 +207,29 @@ function saveTimecard() {
     const saveBtn = querySelectors.query(querySelectors.saveBtn);
     if (saveBtn) saveBtn.click();
 }
+
+export function populateCommentTextarea(taskId, taskTitle) {
+    const commentText = `${taskId}: ${taskTitle}`;
+
+    const tryPopulate = (attempts = 0) => {
+        if (attempts > 10) {
+            console.warn('No se pudo encontrar el textarea de comentarios');
+            return;
+        }
+
+        const commentView = document.querySelector('.oj-sp-create-edit-drawer-template-main-container');
+        const textarea = commentView?.querySelector('textarea');
+
+        if (textarea) {
+            textarea.value = commentText;
+            textarea.focus();
+
+            const inputEvent = new Event('input', { bubbles: true });
+            textarea.dispatchEvent(inputEvent);
+        } else {
+            setTimeout(() => tryPopulate(attempts + 1), 200);
+        }
+    };
+
+    tryPopulate();
+}

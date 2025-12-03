@@ -2,7 +2,7 @@
 // Handles all UI creation and management for the DevOps dialog
 
 import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './azure-devops-api.js';
-import { createCommentCommand } from '../app.js';
+import { createCommentCommand, populateCommentTextarea } from '../app.js';
 
 // Query selector helper (needs to be accessible)
 const querySelectors = {
@@ -620,25 +620,18 @@ function populateCellWithEstimate(input, value) {
     input.dispatchEvent(inputEvent);
 
     input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
-
-    // const enterEvent = new KeyboardEvent('keydown', {
-    //     key: 'Enter',
-    //     code: 'Enter',
-    //     keyCode: 13,
-    //     which: 13,
-    //     bubbles: true,
-    //     cancelable: true,
-    //     view: window
-    // });
-    // input.dispatchEvent(enterEvent);
 }
 
-function handleCellActivation(emptyCell, value) {
+function handleCellActivation(emptyCell, value, taskId, taskTitle) {
     activateEditModeOnCell(emptyCell, (input) => {
         populateCellWithEstimate(input, value);
 
         setTimeout(() => {
             createCommentCommand();
+
+            setTimeout(() => {
+                populateCommentTextarea(taskId, taskTitle);
+            }, 300);
         }, 200);
     });
 }
@@ -646,12 +639,14 @@ function handleCellActivation(emptyCell, value) {
 function processTaskInsertion(task) {
     const taskDate = task.fields['System.ChangedDate'];
     const originalEstimate = task.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '';
+    const taskId = task.fields['System.Id'];
+    const taskTitle = task.fields['System.Title'];
 
     setTimeout(() => {
         const emptyCell = findFirstEmptyCellByDate(taskDate);
 
         if (emptyCell) {
-            handleCellActivation(emptyCell, originalEstimate);
+            handleCellActivation(emptyCell, originalEstimate, taskId, taskTitle);
         } else {
             console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
             startCompletionCheck();
