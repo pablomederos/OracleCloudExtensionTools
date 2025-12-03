@@ -23,6 +23,7 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "config.js",
                 "src/styles/dialog.js",
                 "src/utils/dom.js",
                 "src/tasks/azure-devops-api.js",

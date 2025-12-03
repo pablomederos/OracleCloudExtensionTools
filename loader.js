@@ -9,10 +9,18 @@
         azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true'
     };
 
-    // Inject feature flags as global variable
+    // Inject config script that listens for the config
     const configScript = document.createElement('script');
-    configScript.textContent = `window.ORACLE_TOOLS_CONFIG = ${JSON.stringify(featureFlags)}; `;
+    configScript.src = chrome.runtime.getURL('config.js');
     (document.head || document.documentElement).appendChild(configScript);
+
+    // Wait for config script to load, then send config via custom event
+    configScript.onload = () => {
+        window.postMessage({
+            type: 'ORACLE_TOOLS_CONFIG',
+            config: featureFlags
+        }, '*');
+    };
 
     // List of module files to inject in order
     const moduleFiles = [
