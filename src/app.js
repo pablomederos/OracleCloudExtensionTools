@@ -3,7 +3,7 @@
 
 import addStyles from './styles/dialog.js';
 import removeHeader from './utils/dom.js';
-import { showDevOpsDialog } from './tasks/azure-devops-dialog.js';
+import { showDevOpsDialog, initAzureDevOps } from './tasks/azure-devops-dialog.js';
 
 // Execute utilities immediately
 addStyles();
@@ -28,8 +28,6 @@ const commandValues = Object.values(commands);
 
 const querySelectors = {
     commentOption: ['#insertComment', '#editComment'],
-    devopsDialog: ['.devops-dialog'],
-    toolbarButtonsContainer: ['oj-toolbar[aria-label="Header Toolbar"]'],
     saveBtn: ['button[aria-label=Save]'],
     commentView: ['.oj-sp-create-edit-drawer-template-main-container'],
     query: function (selectorList) { return selectorList.map(it => document.querySelector(it)).find(it => it) },
@@ -43,7 +41,8 @@ const pages = {
 initListeners();
 
 function initListeners() {
-    addDevOpsButton();
+    // Initialize Azure DevOps integration
+    initAzureDevOps();
 
     // Register key pressed
     document.addEventListener('keydown', onKeyDown);
@@ -225,42 +224,4 @@ function openInsertCommentWindow() {
 function saveTimecard() {
     const saveBtn = querySelectors.query(querySelectors.saveBtn);
     if (saveBtn) saveBtn.click();
-}
-
-function addDevOpsButton() {
-    let toolbarButtonsContainer = querySelectors.query(querySelectors.toolbarButtonsContainer);
-
-    if (toolbarButtonsContainer) {
-        createAndAppendButton(toolbarButtonsContainer);
-    } else {
-        let interval = setInterval(() => {
-            toolbarButtonsContainer = querySelectors.query(querySelectors.toolbarButtonsContainer);
-            if (toolbarButtonsContainer) {
-                clearInterval(interval);
-                createAndAppendButton(toolbarButtonsContainer);
-            }
-        }, 200);
-    }
-}
-
-function createAndAppendButton(container) {
-    if (container.querySelector('.devops-btn')) return; // Prevent duplicates
-
-    const button = document.createElement('button');
-    button.textContent = 'Add from DevOps';
-    button.classList.add('BaseButtonStyles_styles_base__jvi3ds0', 'devops-btn'); // Added marker class
-    button.classList.add('BaseButtonStyles_styles_sizes_sm__jvi3ds2d');
-    button.classList.add('BaseButtonStyles_styles_variants_outlined_base__jvi3dso');
-    button.classList.add('BaseButtonStyles_styles_styled__jvi3ds1');
-    button.classList.add('BaseButtonStyles_styles_styledOutline__jvi3ds2');
-    button.classList.add('BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3dsv');
-    button.style.borderRadius = '5px';
-    button.style.fontWeight = '600';
-    button.onclick = showDevOpsDialog;
-
-    if (container.firstChild) {
-        container.insertBefore(button, container.firstChild);
-    } else {
-        container.appendChild(button);
-    }
 }

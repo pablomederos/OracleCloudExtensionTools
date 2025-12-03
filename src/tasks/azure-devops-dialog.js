@@ -413,3 +413,49 @@ export function showDevOpsDialog() {
     dialog.showModal();
     loadInitialData(dialog);
 }
+
+// Button injection functionality
+function addDevOpsButton() {
+    const toolbarSelector = 'oj-toolbar[aria-label="Header Toolbar"]';
+    let toolbarButtonsContainer = document.querySelector(toolbarSelector);
+
+    if (toolbarButtonsContainer) {
+        createAndAppendButton(toolbarButtonsContainer);
+    } else {
+        let interval = setInterval(() => {
+            toolbarButtonsContainer = document.querySelector(toolbarSelector);
+            if (toolbarButtonsContainer) {
+                clearInterval(interval);
+                createAndAppendButton(toolbarButtonsContainer);
+            }
+        }, 200);
+    }
+}
+
+function createAndAppendButton(container) {
+    if (container.querySelector('.devops-btn')) return; // Prevent duplicates
+
+    const button = document.createElement('button');
+    button.textContent = 'Add from DevOps';
+    button.classList.add('BaseButtonStyles_styles_base__jvi3ds0', 'devops-btn');
+    button.classList.add('BaseButtonStyles_styles_sizes_sm__jvi3ds2d');
+    button.classList.add('BaseButtonStyles_styles_variants_outlined_base__jvi3dso');
+    button.classList.add('BaseButtonStyles_styles_styled__jvi3ds1');
+    button.classList.add('BaseButtonStyles_styles_styledOutline__jvi3ds2');
+    button.classList.add('BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3dsv');
+    button.style.borderRadius = '5px';
+    button.style.fontWeight = '600';
+    button.onclick = showDevOpsDialog;
+
+    if (container.firstChild) {
+        container.insertBefore(button, container.firstChild);
+    } else {
+        container.appendChild(button);
+    }
+}
+
+// Initialize Azure DevOps integration
+export function initAzureDevOps() {
+    addDevOpsButton();
+}
+
