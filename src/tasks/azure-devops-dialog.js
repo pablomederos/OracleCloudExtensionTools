@@ -621,16 +621,16 @@ function populateCellWithEstimate(input, value) {
 
     input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
 
-    const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true,
-        view: window
-    });
-    input.dispatchEvent(enterEvent);
+    // const enterEvent = new KeyboardEvent('keydown', {
+    //     key: 'Enter',
+    //     code: 'Enter',
+    //     keyCode: 13,
+    //     which: 13,
+    //     bubbles: true,
+    //     cancelable: true,
+    //     view: window
+    // });
+    // input.dispatchEvent(enterEvent);
 }
 
 function handleCellActivation(emptyCell, value) {
