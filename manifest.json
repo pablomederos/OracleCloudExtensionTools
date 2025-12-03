@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Oracle Cloud Tools",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Injects helper script into Oracle Cloud.",
     "permissions": [
         "storage"
