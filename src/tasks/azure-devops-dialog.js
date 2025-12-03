@@ -12,6 +12,12 @@ function query(selectorList) {
     return selectorList.map(it => document.querySelector(it)).find(it => it);
 }
 
+// Sort state
+let sortState = {
+    column: 'date', // default sort by date
+    ascending: false // newest first
+};
+
 function createControlGroup(labelText, type, id) {
     const group = document.createElement('div');
     group.className = 'control-group';
@@ -29,70 +35,110 @@ function createControlGroup(labelText, type, id) {
     return group;
 }
 
-function renderTable(workItems) {
+function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
     const tbody = document.getElementById('tasksBody');
     tbody.innerHTML = '';
+
+    // Update sort state
+    sortState.column = sortColumn;
+    sortState.ascending = ascending;
+
+    // Update header indicators
+    updateSortIndicators();
 
     let lastDate = null;
     let useGray = false;
 
-    workItems
-        .sort((a, b) => new Date(b.fields['System.ChangedDate']) - new Date(a.fields['System.ChangedDate']))
-        .forEach(item => {
-            const tr = document.createElement('tr');
+    // Sort the work items based on the selected column
+    const sortedItems = [...workItems].sort((a, b) => {
+        let valA, valB;
 
-            const fields = item.fields;
-            const id = fields['System.Id'];
-            const title = fields['System.Title'];
-            const date = new Date(fields['System.ChangedDate']).toLocaleDateString();
-            const status = fields['System.State'];
-            const estimate = fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '-';
+        switch (sortColumn) {
+            case 'id':
+                valA = a.fields['System.Id'];
+                valB = b.fields['System.Id'];
+                break;
+            case 'title':
+                valA = a.fields['System.Title'].toLowerCase();
+                valB = b.fields['System.Title'].toLowerCase();
+                break;
+            case 'date':
+                valA = new Date(a.fields['System.ChangedDate']);
+                valB = new Date(b.fields['System.ChangedDate']);
+                break;
+            case 'status':
+                valA = a.fields['System.State'].toLowerCase();
+                valB = b.fields['System.State'].toLowerCase();
+                break;
+            case 'estimate':
+                valA = a.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || 0;
+                valB = b.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || 0;
+                break;
+            default:
+                valA = new Date(a.fields['System.ChangedDate']);
+                valB = new Date(b.fields['System.ChangedDate']);
+        }
 
-            // Date grouping logic
-            if (date !== lastDate) {
-                useGray = !useGray;
-                lastDate = date;
-            }
+        if (valA < valB) return ascending ? -1 : 1;
+        if (valA > valB) return ascending ? 1 : -1;
+        return 0;
+    });
 
-            if (useGray) {
-                tr.classList.add('task-row-alt');
-            }
+    sortedItems.forEach(item => {
+        const tr = document.createElement('tr');
 
-            const cells = [id, title, date, status, estimate];
-            cells.forEach(text => {
-                const td = document.createElement('td');
-                td.textContent = text;
-                tr.appendChild(td);
-            });
+        const fields = item.fields;
+        const id = fields['System.Id'];
+        const title = fields['System.Title'];
+        const date = new Date(fields['System.ChangedDate']).toLocaleDateString();
+        const status = fields['System.State'];
+        const estimate = fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '-';
 
-            const actionTd = document.createElement('td');
+        // Date grouping logic
+        if (date !== lastDate) {
+            useGray = !useGray;
+            lastDate = date;
+        }
 
-            // Add to Time Sheet button
-            const btn = document.createElement('button');
-            btn.textContent = '⏱️';
-            btn.title = 'Add to Time Sheet';
-            btn.className = 'action-btn';
-            btn.onclick = () => addToTimeSheet(id);
-            actionTd.appendChild(btn);
+        if (useGray) {
+            tr.classList.add('task-row-alt');
+        }
 
-            const copyBtn = document.createElement('button');
-            copyBtn.textContent = '📋';
-            copyBtn.title = 'Copy to Clipboard';
-            copyBtn.className = 'action-btn';
-            copyBtn.style.marginLeft = '5px';
-            copyBtn.onclick = () => {
-                const text = `${id}: ${title.replace(':', ' ')}`;
-                navigator.clipboard.writeText(text).then(() => {
-                    const dialog = query(querySelectors.devopsDialog);
-                    if (dialog) dialog.close();
-                });
-            };
-            actionTd.appendChild(copyBtn);
-
-            tr.appendChild(actionTd);
-
-            tbody.appendChild(tr);
+        const cells = [id, title, date, status, estimate];
+        cells.forEach(text => {
+            const td = document.createElement('td');
+            td.textContent = text;
+            tr.appendChild(td);
         });
+
+        const actionTd = document.createElement('td');
+
+        // Add to Time Sheet button
+        const btn = document.createElement('button');
+        btn.textContent = '⏱️';
+        btn.title = 'Add to Time Sheet';
+        btn.className = 'action-btn';
+        btn.onclick = () => addToTimeSheet(id);
+        actionTd.appendChild(btn);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = '📋';
+        copyBtn.title = 'Copy to Clipboard';
+        copyBtn.className = 'action-btn';
+        copyBtn.style.marginLeft = '5px';
+        copyBtn.onclick = () => {
+            const text = `${id}: ${title.replace(':', ' ')}`;
+            navigator.clipboard.writeText(text).then(() => {
+                const dialog = query(querySelectors.devopsDialog);
+                if (dialog) dialog.close();
+            });
+        };
+        actionTd.appendChild(copyBtn);
+
+        tr.appendChild(actionTd);
+
+        tbody.appendChild(tr);
+    });
 }
 
 function updateSearchButtonState(dialog) {
@@ -162,6 +208,24 @@ async function loadInitialData(dialog) {
     }
 }
 
+function updateSortIndicators() {
+    const headers = document.querySelectorAll('.tasks-table th');
+    const columnMap = ['id', 'title', 'date', 'status', 'estimate', null]; // null for Action column
+
+    headers.forEach((th, index) => {
+        const column = columnMap[index];
+        if (!column) return; // Skip Action column
+
+        // Remove existing indicators
+        th.textContent = th.textContent.replace(/ [↑↓]/g, '');
+
+        // Add indicator if this is the sorted column
+        if (column === sortState.column) {
+            th.textContent += sortState.ascending ? ' ↑' : ' ↓';
+        }
+    });
+}
+
 function createTasksContent(container, dialog) {
     const controls = document.createElement('div');
     controls.className = 'controls';
@@ -190,10 +254,41 @@ function createTasksContent(container, dialog) {
 
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    const headers = ['Task ID', 'Title', 'Changed Date', 'Status', 'Original Estimate', 'Action'];
-    headers.forEach(text => {
+    const headers = [
+        { text: 'Task ID', column: 'id' },
+        { text: 'Title', column: 'title' },
+        { text: 'Changed Date', column: 'date' },
+        { text: 'Status', column: 'status' },
+        { text: 'Original Estimate', column: 'estimate' },
+        { text: 'Action', column: null }
+    ];
+
+    headers.forEach(({ text, column }) => {
         const th = document.createElement('th');
         th.textContent = text;
+
+        // Make sortable columns clickable
+        if (column) {
+            th.style.cursor = 'pointer';
+            th.style.userSelect = 'none';
+            th.title = 'Click to sort';
+
+            th.onclick = () => {
+                const cachedData = sessionStorage.getItem('devops_tasks_cache');
+                if (cachedData) {
+                    const workItems = JSON.parse(cachedData);
+                    // Toggle sort direction if clicking the same column
+                    const ascending = sortState.column === column ? !sortState.ascending : true;
+                    renderTable(workItems, column, ascending);
+                }
+            };
+
+            // Add visual indicator for current sort
+            if (column === sortState.column) {
+                th.textContent += sortState.ascending ? ' ↑' : ' ↓';
+            }
+        }
+
         headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
