@@ -1,15 +1,12 @@
 // Oracle Cloud Tools
-// Main application logic
 
 import addStyles from './styles/dialog.js';
 import removeHeader from './utils/dom.js';
 import { showDevOpsDialog, initAzureDevOps } from './tasks/azure-devops-dialog.js';
 
-// Execute utilities immediately
 addStyles();
 removeHeader();
 
-// Global variables for keyboard shortcuts
 let ctrlBtnPressed = false;
 let ctrlKeyCode = 0;
 let shiftBtnPressed = false;
@@ -37,7 +34,6 @@ const pages = {
     timecardsPage: '/fscmUI/redwood/time/timecards/landing-page'
 };
 
-// Init listeners
 initListeners();
 
 function initListeners() {
@@ -80,11 +76,13 @@ function onKeyDown(ev) {
             .some(it => it === ev.keyCode)
     ) actionkeyPressedCode = parseInt(ev.keyCode);
 
-    // Prevent write on command
-    if (isAlterKeyPressed() && isWellKnownAction()) {
+    // Check if this is a script command
+    if (isScriptCommand()) {
+        // Prevent browser default behavior for our commands
         ev.preventDefault();
         checkCommand();
     }
+    // Otherwise, let browser handle it normally (Ctrl+C, Ctrl+V, etc.)
 }
 
 function onKeyUp(ev) {
@@ -106,41 +104,21 @@ function onKeyUp(ev) {
 
 function isAlterKeyPressed() { return ctrlBtnPressed || shiftBtnPressed || altBtnPressed }
 
-function isWellKnownAction() {
+function isScriptCommand() {
     const keyCombinations = [
         ctrlBtnPressed, shiftBtnPressed, altBtnPressed, // alter keys
-        actionkeyPressedCode // action key
+        actionkeyPressedCode, // action key
+        window.location.pathname // context
     ].join(',');
 
-    if (
-        shiftBtnPressed
-        && 65 <= actionkeyPressedCode
-        && actionkeyPressedCode <= 90
-    ) return true; // mayus
+    // Check if it matches any of our defined commands
+    const scriptCommands = [
+        `${commands.createComment},${pages.timecardsPage}`,
+        `${commands.showDevOpsDialog},${pages.timecardsPage}`,
+        `${commands.saveTimeCard},${pages.timecardsPage}`
+    ];
 
-    if (
-        ctrlBtnPressed
-        && 37 <= actionkeyPressedCode
-        && actionkeyPressedCode <= 40
-    ) return true; // ctrl + arrows
-
-    if (commandValues.includes(keyCombinations)) return true;
-
-    // Please add an action name (comment) at the end
-    switch (keyCombinations) {
-        // other action i.e. || 'false,false,false,0'
-        case 'true,false,false,82': // Ctrl + r : Reload page
-        case 'true,true,false,82': // Ctrl + Shift + r : Reload page, clean cache
-        case 'true,false,false,65': // Ctrl + a : Select All
-        case 'true,false,false,67': // Ctrl + c : Copy
-        case 'true,false,false,86': // Ctrl + v : Paste
-        case 'false,true,false,186': // Shift + : Semicolon
-            return true;
-            break;
-        default: return false;
-    }
-
-
+    return scriptCommands.includes(keyCombinations);
 }
 
 function checkCommand() {
