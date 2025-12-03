@@ -1,7 +1,7 @@
 // DevOps Dialog Module
 // Handles all UI creation and management for the DevOps dialog
 
-import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './devops-api.js';
+import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './azure-devops-api.js';
 
 // Query selector helper (needs to be accessible)
 const querySelectors = {

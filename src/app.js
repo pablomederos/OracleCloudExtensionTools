@@ -1,9 +1,9 @@
 // Oracle Cloud Tools
 // Main application logic
 
-import addStyles from './styles.js';
-import removeHeader from './utils.js';
-import { showDevOpsDialog } from './devops-dialog.js';
+import addStyles from './styles/dialog.js';
+import removeHeader from './utils/dom.js';
+import { showDevOpsDialog } from './tasks/azure-devops-dialog.js';
 
 // Execute utilities immediately
 addStyles();

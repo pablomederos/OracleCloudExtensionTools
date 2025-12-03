@@ -5,11 +5,11 @@
 
     // List of module files to inject in order
     const moduleFiles = [
-        'styles.js',
-        'utils.js',
-        'devops-api.js',
-        'devops-dialog.js',
-        'app.js'
+        'src/styles/dialog.js',
+        'src/utils/dom.js',
+        'src/tasks/azure-devops-api.js',
+        'src/tasks/azure-devops-dialog.js',
+        'src/app.js'
     ];
 
     // Inject each module file as a script tag
