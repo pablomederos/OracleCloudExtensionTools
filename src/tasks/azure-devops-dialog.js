@@ -104,8 +104,6 @@ function activateEditModeOnCell(cellElement, callback) {
     });
     cellElement.dispatchEvent(clickEvent);
 
-    console.log("Foco y Clic aplicados a la celda. Intentando activar edición...");
-
     setTimeout(() => {
         const dblClick = new MouseEvent('dblclick', {
             bubbles: true,
@@ -115,13 +113,12 @@ function activateEditModeOnCell(cellElement, callback) {
 
         const success = cellElement.dispatchEvent(dblClick);
         if (success) {
-            console.log("Evento doble clic enviado.");
 
             setTimeout(() => {
                 const input = cellElement.querySelector('input, textarea');
                 if (input) {
                     input.focus();
-                    console.log("Input interno encontrado y enfocado.");
+
                     if (callback) callback(input);
                 } else {
                     console.warn("No se encontró input dentro de la celda.");
@@ -614,48 +611,72 @@ function createAndAppendButton(container) {
 }
 
 // Time sheet integration functions
+function populateCellWithEstimate(input, value) {
+    if (!value) return;
+
+    input.value = value;
+
+    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+    input.dispatchEvent(inputEvent);
+
+    input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+
+    const enterEvent = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+        view: window
+    });
+    input.dispatchEvent(enterEvent);
+}
+
+function handleCellActivation(emptyCell, value) {
+    activateEditModeOnCell(emptyCell, (input) => {
+        populateCellWithEstimate(input, value);
+
+        setTimeout(() => {
+            createCommentCommand();
+        }, 200);
+    });
+}
+
+function processTaskInsertion(task) {
+    const taskDate = task.fields['System.ChangedDate'];
+    const originalEstimate = task.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '';
+
+    setTimeout(() => {
+        const emptyCell = findFirstEmptyCellByDate(taskDate);
+
+        if (emptyCell) {
+            handleCellActivation(emptyCell, originalEstimate);
+        } else {
+            console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
+            startCompletionCheck();
+        }
+    }, 300);
+}
+
 function addToTimeSheet(id) {
     const cachedData = sessionStorage.getItem('devops_tasks_cache');
-    if (cachedData) {
-        const tasks = JSON.parse(cachedData);
+    if (!cachedData) return;
 
-        const task = tasks.find(t => t.fields['System.Id'] == id);
+    const tasks = JSON.parse(cachedData);
+    const task = tasks.find(t => t.fields['System.Id'] == id);
 
-        if (task) {
-            sessionStorage.setItem('devOpsRowJSON', JSON.stringify(task));
-
-            const dialog = query(querySelectors.devopsDialog);
-            if (dialog) dialog.close();
-
-            const taskDate = task.fields['System.ChangedDate'];
-            const originalEstimate = task.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '';
-
-            setTimeout(() => {
-                const emptyCell = findFirstEmptyCellByDate(taskDate);
-
-                if (emptyCell) {
-                    activateEditModeOnCell(emptyCell, (input) => {
-                        if (originalEstimate) {
-                            input.value = originalEstimate;
-                            console.log(`Valor asignado al input: ${originalEstimate}`);
-
-                            const inputEvent = new Event('input', { bubbles: true });
-                            input.dispatchEvent(inputEvent);
-                        }
-
-                        setTimeout(() => {
-                            createCommentCommand();
-                        }, 200);
-                    });
-                } else {
-                    console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
-                    startCompletionCheck();
-                }
-            }, 300);
-        } else {
-            alert('Task not found in cache.');
-        }
+    if (!task) {
+        alert('Task not found in cache.');
+        return;
     }
+
+    sessionStorage.setItem('devOpsRowJSON', JSON.stringify(task));
+
+    const dialog = query(querySelectors.devopsDialog);
+    if (dialog) dialog.close();
+
+    processTaskInsertion(task);
 }
 
 function startCompletionCheck() {
