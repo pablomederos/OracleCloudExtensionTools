@@ -2,6 +2,7 @@
 // Handles all UI creation and management for the DevOps dialog
 
 import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './azure-devops-api.js';
+import { createCommentCommand } from '../app.js';
 
 // Query selector helper (needs to be accessible)
 const querySelectors = {
@@ -17,6 +18,76 @@ let sortState = {
     column: 'date', // default sort by date
     ascending: false // newest first
 };
+
+function findFirstEmptyCellByDate(isoDateString) {
+    const dateObj = new Date(isoDateString);
+
+    if (isNaN(dateObj.getTime())) {
+        console.error("Fecha inválida proporcionada:", isoDateString);
+        return null;
+    }
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    const dayName = dayNames[dateObj.getUTCDay()];
+    const monthName = monthNames[dateObj.getUTCMonth()];
+    const dayNumber = String(dateObj.getUTCDate()).padStart(2, '0');
+
+    const targetHeaderValidString = `${dayName},${monthName} ${dayNumber}`;
+    console.log(`Buscando columna para la fecha: "${targetHeaderValidString}"`);
+
+    const headerContainer = document.getElementById('timecard-datagrid:columnHeader');
+    if (!headerContainer) {
+        console.error("No se encontró el contenedor de encabezados 'timecard-datagrid:columnHeader'");
+        return null;
+    }
+
+    const headerCells = Array.from(headerContainer.querySelectorAll('.oj-datagrid-header-cell'));
+
+    let targetLeftPos = null;
+
+    const matchingHeader = headerCells.find(cell => {
+        return cell.innerText.trim() === targetHeaderValidString;
+    });
+
+    if (!matchingHeader) {
+        console.warn(`No se encontró ninguna columna con la fecha ${targetHeaderValidString}`);
+        return null;
+    }
+
+    targetLeftPos = matchingHeader.style.left;
+    console.log(`Columna encontrada en posición left: ${targetLeftPos}`);
+
+    const dataBody = document.getElementById('timecard-datagrid:databody');
+    if (!dataBody) return null;
+
+    const allCells = Array.from(dataBody.querySelectorAll('.oj-datagrid-cell'));
+
+    const columnCells = allCells.filter(cell => cell.style.left === targetLeftPos);
+
+    columnCells.sort((a, b) => {
+        const topA = parseFloat(a.style.top || 0);
+        const topB = parseFloat(b.style.top || 0);
+        return topA - topB;
+    });
+
+    for (let cell of columnCells) {
+        const textContent = cell.innerText.trim();
+        const inputElement = cell.querySelector('input');
+        const inputValue = inputElement ? inputElement.value : "";
+
+        const isEmpty = (textContent === "" && inputValue === "");
+
+        if (isEmpty) {
+            console.log("Celda vacía encontrada:", cell);
+            return cell;
+        }
+    }
+
+    console.log("No se encontraron celdas vacías para este día (la columna está llena).");
+    return null;
+}
 
 
 function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
@@ -514,7 +585,28 @@ function addToTimeSheet(id) {
             const dialog = query(querySelectors.devopsDialog);
             if (dialog) dialog.close();
 
-            startCompletionCheck();
+            // Get the task date and find the empty cell
+            const taskDate = task.fields['System.ChangedDate'];
+
+            // Wait a bit for the dialog to close, then find and focus the cell
+            setTimeout(() => {
+                const emptyCell = findFirstEmptyCellByDate(taskDate);
+
+                if (emptyCell) {
+                    // Focus the cell
+                    emptyCell.focus();
+                    emptyCell.click();
+
+                    // Wait a bit for the cell to be focused, then trigger comment command
+                    setTimeout(() => {
+                        createCommentCommand();
+                    }, 200);
+                } else {
+                    console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
+                    // Fallback to the old behavior
+                    startCompletionCheck();
+                }
+            }, 300);
         } else {
             alert('Task not found in cache.');
         }

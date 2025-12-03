@@ -21,8 +21,6 @@ const commands = {
     saveTimeCard: "true,false,false,83" // Ctrl + s
 };
 
-const commandValues = Object.values(commands);
-
 const querySelectors = {
     commentOption: ['#insertComment', '#editComment'],
     saveBtn: ['button[aria-label=Save]'],
@@ -152,7 +150,7 @@ function clearCommands() {
     commentTriggered = false;
 }
 
-function createCommentCommand() {
+export function createCommentCommand() {
     if (commentTriggered) return;
     commentTriggered = true;
 
