@@ -89,6 +89,48 @@ function findFirstEmptyCellByDate(isoDateString) {
     return null;
 }
 
+function activateEditModeOnCell(cellElement, callback) {
+    if (!cellElement) {
+        console.error("No se proporcionó una celda válida.");
+        return;
+    }
+
+    cellElement.focus();
+
+    const clickEvent = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+    });
+    cellElement.dispatchEvent(clickEvent);
+
+    console.log("Foco y Clic aplicados a la celda. Intentando activar edición...");
+
+    setTimeout(() => {
+        const dblClick = new MouseEvent('dblclick', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+
+        const success = cellElement.dispatchEvent(dblClick);
+        if (success) {
+            console.log("Evento doble clic enviado.");
+
+            setTimeout(() => {
+                const input = cellElement.querySelector('input, textarea');
+                if (input) {
+                    input.focus();
+                    console.log("Input interno encontrado y enfocado.");
+                    if (callback) callback(input);
+                } else {
+                    console.warn("No se encontró input dentro de la celda.");
+                }
+            }, 100);
+        }
+    }, 150);
+}
+
 
 function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
     const tbody = document.getElementById('tasksBody');
@@ -585,25 +627,28 @@ function addToTimeSheet(id) {
             const dialog = query(querySelectors.devopsDialog);
             if (dialog) dialog.close();
 
-            // Get the task date and find the empty cell
             const taskDate = task.fields['System.ChangedDate'];
+            const originalEstimate = task.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '';
 
-            // Wait a bit for the dialog to close, then find and focus the cell
             setTimeout(() => {
                 const emptyCell = findFirstEmptyCellByDate(taskDate);
 
                 if (emptyCell) {
-                    // Focus the cell
-                    emptyCell.focus();
-                    emptyCell.click();
+                    activateEditModeOnCell(emptyCell, (input) => {
+                        if (originalEstimate) {
+                            input.value = originalEstimate;
+                            console.log(`Valor asignado al input: ${originalEstimate}`);
 
-                    // Wait a bit for the cell to be focused, then trigger comment command
-                    setTimeout(() => {
-                        createCommentCommand();
-                    }, 200);
+                            const inputEvent = new Event('input', { bubbles: true });
+                            input.dispatchEvent(inputEvent);
+                        }
+
+                        setTimeout(() => {
+                            createCommentCommand();
+                        }, 200);
+                    });
                 } else {
                     console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
-                    // Fallback to the old behavior
                     startCompletionCheck();
                 }
             }, 300);
