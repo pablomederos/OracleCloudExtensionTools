@@ -18,22 +18,6 @@ let sortState = {
     ascending: false // newest first
 };
 
-function createControlGroup(labelText, type, id) {
-    const group = document.createElement('div');
-    group.className = 'control-group';
-
-    const label = document.createElement('label');
-    label.textContent = labelText;
-    label.htmlFor = id;
-
-    const input = document.createElement('input');
-    input.type = type;
-    input.id = id;
-
-    group.appendChild(label);
-    group.appendChild(input);
-    return group;
-}
 
 function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
     const tbody = document.getElementById('tasksBody');
@@ -227,93 +211,58 @@ function updateSortIndicators() {
 }
 
 function createTasksContent(container, dialog) {
-    const controls = document.createElement('div');
-    controls.className = 'controls';
+    container.innerHTML = `
+        <div class="controls">
+            <div class="control-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="control-group">
+                <label for="endDate">End Date</label>
+                <input type="date" id="endDate">
+            </div>
+            <button id="searchBtn" class="btn-primary" style="align-self: end;" disabled>Search</button>
+        </div>
+        
+        <div class="tasks-table-container">
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th data-column="id" style="cursor: pointer; user-select: none;" title="Click to sort">Task ID</th>
+                        <th data-column="title" style="cursor: pointer; user-select: none;" title="Click to sort">Title</th>
+                        <th data-column="date" style="cursor: pointer; user-select: none;" title="Click to sort">Changed Date</th>
+                        <th data-column="status" style="cursor: pointer; user-select: none;" title="Click to sort">Status</th>
+                        <th data-column="estimate" style="cursor: pointer; user-select: none;" title="Click to sort">Original Estimate</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksBody"></tbody>
+            </table>
+        </div>
+        
+        <div class="footer-actions">
+            <button id="addAllBtn" class="btn-secondary">Add all to Time Sheet</button>
+        </div>
+    `;
 
-    const startGroup = createControlGroup('Start Date', 'date', 'startDate');
-    controls.appendChild(startGroup);
+    // Get references to elements
+    const startDateInput = container.querySelector('#startDate');
+    const endDateInput = container.querySelector('#endDate');
+    const searchBtn = container.querySelector('#searchBtn');
+    const addAllButton = container.querySelector('#addAllBtn');
 
-    const endGroup = createControlGroup('End Date', 'date', 'endDate');
-    controls.appendChild(endGroup);
-
-    const searchBtn = document.createElement('button');
-    searchBtn.textContent = 'Search';
-    searchBtn.id = 'searchBtn';
-    searchBtn.className = 'btn-primary';
-    searchBtn.style.alignSelf = 'end';
-    searchBtn.disabled = true;
-    controls.appendChild(searchBtn);
-
-    container.appendChild(controls);
-
-    const tableContainer = document.createElement('div');
-    tableContainer.className = 'tasks-table-container';
-
-    const table = document.createElement('table');
-    table.className = 'tasks-table';
-
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    const headers = [
-        { text: 'Task ID', column: 'id' },
-        { text: 'Title', column: 'title' },
-        { text: 'Changed Date', column: 'date' },
-        { text: 'Status', column: 'status' },
-        { text: 'Original Estimate', column: 'estimate' },
-        { text: 'Action', column: null }
-    ];
-
-    headers.forEach(({ text, column }) => {
-        const th = document.createElement('th');
-        th.textContent = text;
-
-        // Make sortable columns clickable
-        if (column) {
-            th.style.cursor = 'pointer';
-            th.style.userSelect = 'none';
-            th.title = 'Click to sort';
-
-            th.onclick = () => {
-                const cachedData = sessionStorage.getItem('devops_tasks_cache');
-                if (cachedData) {
-                    const workItems = JSON.parse(cachedData);
-                    // Toggle sort direction if clicking the same column
-                    const ascending = sortState.column === column ? !sortState.ascending : true;
-                    renderTable(workItems, column, ascending);
-                }
-            };
-
-            // Add visual indicator for current sort
-            if (column === sortState.column) {
-                th.textContent += sortState.ascending ? ' ↑' : ' ↓';
+    // Add click handlers to sortable headers
+    container.querySelectorAll('th[data-column]').forEach(th => {
+        th.onclick = () => {
+            const column = th.dataset.column;
+            const cachedData = sessionStorage.getItem('devops_tasks_cache');
+            if (cachedData) {
+                const workItems = JSON.parse(cachedData);
+                const ascending = sortState.column === column ? !sortState.ascending : true;
+                renderTable(workItems, column, ascending);
             }
-        }
-
-        headerRow.appendChild(th);
+        };
     });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
-    tbody.id = 'tasksBody';
-    table.appendChild(tbody);
-
-    tableContainer.appendChild(table);
-    container.appendChild(tableContainer);
-
-    const footer = document.createElement('div');
-    footer.className = 'footer-actions';
-
-    const addAllButton = document.createElement('button');
-    addAllButton.textContent = 'Add all to Time Sheet';
-    addAllButton.id = 'addAllBtn';
-    addAllButton.className = 'btn-secondary';
-
-    footer.appendChild(addAllButton);
-    container.appendChild(footer);
-
-    const startDateInput = startGroup.querySelector('input');
-    const endDateInput = endGroup.querySelector('input');
 
     searchBtn.onclick = async () => {
         const start = startDateInput.value;
@@ -369,41 +318,48 @@ function createTasksContent(container, dialog) {
 }
 
 function createSettingsContent(container, dialog) {
-    container.style.padding = '15px';
+    container.innerHTML = `
+        <div style="padding: 15px;">
+            <div class="control-group">
+                <label for="adoOrgUrl">Org URL</label>
+                <input type="text" id="adoOrgUrl" value="${ADO_CONFIG.orgUrl}" placeholder="e.g. https://dev.azure.com/yourorg">
+            </div>
+            <div class="control-group">
+                <label for="adoProject">Project</label>
+                <input type="text" id="adoProject" value="${ADO_CONFIG.project}" placeholder="e.g. YourProject">
+            </div>
+            <div class="control-group">
+                <label for="adoApiVersion">API Version</label>
+                <input type="text" id="adoApiVersion" value="${ADO_CONFIG.apiVersion}" placeholder="e.g. 7.1">
+            </div>
+            <div class="control-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" value="${localStorage.getItem('devops_username') || ''}" placeholder="e.g. Gabriel Mederos <email>">
+            </div>
+            <div class="control-group">
+                <label for="adoToken">DevOps Token (PAT)</label>
+                <input type="password" id="adoToken" placeholder="Leave empty to keep existing token">
+            </div>
+            <button id="saveSettingsBtn" class="btn-primary" style="margin-top: 20px;">Save Settings</button>
+        </div>
+    `;
 
-    const orgUrlGroup = createControlGroup('Org URL', 'text', 'adoOrgUrl');
-    orgUrlGroup.querySelector('input').value = ADO_CONFIG.orgUrl;
-    orgUrlGroup.querySelector('input').placeholder = 'e.g. https://dev.azure.com/yourorg';
+    // Get references to elements
+    const usernameInput = container.querySelector('#username');
+    const tokenInput = container.querySelector('#adoToken');
+    const saveSettingsBtn = container.querySelector('#saveSettingsBtn');
 
-    const projectGroup = createControlGroup('Project', 'text', 'adoProject');
-    projectGroup.querySelector('input').value = ADO_CONFIG.project;
-    projectGroup.querySelector('input').placeholder = 'e.g. YourProject';
-
-    const apiVersionGroup = createControlGroup('API Version', 'text', 'adoApiVersion');
-    apiVersionGroup.querySelector('input').value = ADO_CONFIG.apiVersion;
-    apiVersionGroup.querySelector('input').placeholder = 'e.g. 7.1';
-
-    const usernameGroup = createControlGroup('Username', 'text', 'username');
-    const usernameInput = usernameGroup.querySelector('input');
-    usernameInput.placeholder = 'e.g. Gabriel Mederos <email>';
-    usernameInput.value = localStorage.getItem('devops_username') || '';
+    // Username input handler
     usernameInput.oninput = () => {
         localStorage.setItem('devops_username', usernameInput.value);
         updateSearchButtonState(dialog);
     };
 
-    const tokenGroup = createControlGroup('DevOps Token (PAT)', 'password', 'adoToken');
-    const tokenInput = tokenGroup.querySelector('input');
-    tokenInput.placeholder = 'Leave empty to keep existing token';
-
-    const saveSettingsBtn = document.createElement('button');
-    saveSettingsBtn.textContent = 'Save Settings';
-    saveSettingsBtn.className = 'btn-primary';
-    saveSettingsBtn.style.marginTop = '20px';
+    // Save settings handler
     saveSettingsBtn.onclick = () => {
-        const newOrgUrl = orgUrlGroup.querySelector('input').value.trim();
-        const newProject = projectGroup.querySelector('input').value.trim();
-        const newApiVersion = apiVersionGroup.querySelector('input').value.trim();
+        const newOrgUrl = container.querySelector('#adoOrgUrl').value.trim();
+        const newProject = container.querySelector('#adoProject').value.trim();
+        const newApiVersion = container.querySelector('#adoApiVersion').value.trim();
         const newToken = tokenInput.value.trim();
 
         if (newOrgUrl && newProject && newApiVersion) {
@@ -427,79 +383,44 @@ function createSettingsContent(container, dialog) {
             alert('Please fill all required fields');
         }
     };
-
-    container.appendChild(orgUrlGroup);
-    container.appendChild(projectGroup);
-    container.appendChild(apiVersionGroup);
-    container.appendChild(usernameGroup);
-    container.appendChild(tokenGroup);
-    container.appendChild(saveSettingsBtn);
 }
 
 export function createDevopsDialog() {
     const dialog = document.createElement('dialog');
     dialog.classList.add('devops-dialog');
 
-    const header = document.createElement('div');
-    header.className = 'dialog-header';
+    dialog.innerHTML = `
+        <div class="dialog-header">
+            <h2 style="color: white;">Azure DevOps Tasks</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+        
+        <div class="tabs-nav" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 15px;">
+            <button class="tab-btn active" data-tab="tasks" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 2px solid #0078d4; font-weight: bold;">Tasks</button>
+            <button class="tab-btn" data-tab="settings" style="padding: 10px 20px; border: none; background: none; cursor: pointer;">Settings</button>
+        </div>
+        
+        <div class="dialog-body">
+            <div class="tab-content" data-content="tasks"></div>
+            <div class="tab-content" data-content="settings" style="display: none;"></div>
+        </div>
+    `;
 
-    const title = document.createElement('h2');
-    title.textContent = 'Azure DevOps Tasks';
-    title.style.color = 'white';
+    // Get references to elements
+    const closeBtn = dialog.querySelector('.close-btn');
+    const tasksTabBtn = dialog.querySelector('[data-tab="tasks"]');
+    const settingsTabBtn = dialog.querySelector('[data-tab="settings"]');
+    const tasksContent = dialog.querySelector('[data-content="tasks"]');
+    const settingsContent = dialog.querySelector('[data-content="settings"]');
 
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'close-btn';
-    closeBtn.innerHTML = '&times;';
+    // Close button handler
     closeBtn.onclick = () => dialog.close();
 
-    header.appendChild(title);
-    header.appendChild(closeBtn);
-    dialog.appendChild(header);
-
-    const tabsNav = document.createElement('div');
-    tabsNav.className = 'tabs-nav';
-    tabsNav.style.display = 'flex';
-    tabsNav.style.borderBottom = '1px solid #ccc';
-    tabsNav.style.marginBottom = '15px';
-
-    const tasksTabBtn = document.createElement('button');
-    tasksTabBtn.textContent = 'Tasks';
-    tasksTabBtn.className = 'tab-btn active';
-    tasksTabBtn.style.padding = '10px 20px';
-    tasksTabBtn.style.border = 'none';
-    tasksTabBtn.style.background = 'none';
-    tasksTabBtn.style.cursor = 'pointer';
-    tasksTabBtn.style.borderBottom = '2px solid #0078d4';
-    tasksTabBtn.style.fontWeight = 'bold';
-
-    const settingsTabBtn = document.createElement('button');
-    settingsTabBtn.textContent = 'Settings';
-    settingsTabBtn.className = 'tab-btn';
-    settingsTabBtn.style.padding = '10px 20px';
-    settingsTabBtn.style.border = 'none';
-    settingsTabBtn.style.background = 'none';
-    settingsTabBtn.style.cursor = 'pointer';
-
-    tabsNav.appendChild(tasksTabBtn);
-    tabsNav.appendChild(settingsTabBtn);
-    dialog.appendChild(tabsNav);
-
-    const body = document.createElement('div');
-    body.className = 'dialog-body';
-
-    const tasksContent = document.createElement('div');
-    tasksContent.className = 'tab-content';
+    // Create tab contents
     createTasksContent(tasksContent, dialog);
-    body.appendChild(tasksContent);
-
-    const settingsContent = document.createElement('div');
-    settingsContent.className = 'tab-content';
-    settingsContent.style.display = 'none';
     createSettingsContent(settingsContent, dialog);
-    body.appendChild(settingsContent);
 
-    dialog.appendChild(body);
-
+    // Tab switching logic
     tasksTabBtn.onclick = () => {
         tasksTabBtn.classList.add('active');
         tasksTabBtn.style.borderBottom = '2px solid #0078d4';
