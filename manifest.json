@@ -9,9 +9,22 @@
                 "https://fa-etqd-saasfaprod1.fa.ocs.oraclecloud.com/*"
             ],
             "js": [
+                "loader.js"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "styles.js",
+                "utils.js",
+                "devops-api.js",
+                "devops-dialog.js",
                 "app.js"
             ],
-            "type": "module"
+            "matches": [
+                "https://fa-etqd-saasfaprod1.fa.ocs.oraclecloud.com/*"
+            ]
         }
     ],
     "icons": {
