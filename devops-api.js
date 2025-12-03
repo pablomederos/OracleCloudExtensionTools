@@ -1,0 +1,88 @@
+// Azure DevOps API Module
+// Handles all API calls to Azure DevOps
+
+// ADO Configuration
+export const ADO_CONFIG = {
+    orgUrl: localStorage.getItem('ado_orgUrl') || '',
+    project: localStorage.getItem('ado_project') || '',
+    apiVersion: localStorage.getItem('ado_apiVersion') || ''
+};
+
+export function getAuthHeader() {
+    const storedToken = localStorage.getItem('devops_token');
+    if (!storedToken)
+        alert('Azure DevOps Token not found. Please set it.');
+
+    const devopsToken = atob(storedToken).substring(1);
+
+    return {
+        'Authorization': 'Bearer ' + devopsToken,
+        'Content-Type': 'application/json'
+    };
+}
+
+export async function fetchTaskIds(startDate, endDate, username) {
+    const query = `
+    SELECT [System.Id]
+    FROM workitems
+    WHERE [System.WorkItemType] = 'Task'
+    AND [System.TeamProject] = '${ADO_CONFIG.project}'
+    AND [System.ChangedDate] >= '${startDate}'
+    AND [System.ChangedDate] <= '${endDate}'
+    AND [System.ChangedBy] = '${username}'
+`;
+
+    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/wiql?api-version=${ADO_CONFIG.apiVersion}`;
+    const authToken = getAuthHeader();
+
+    if (!authToken) return;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: authToken,
+            body: JSON.stringify({ query })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('API Error Response:', text);
+            throw new Error(`WIQL Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.workItems.map(item => item.id);
+    } catch (error) {
+        console.error('Error fetching task IDs:', error);
+        alert('Error fetching tasks. Check console for details.');
+        return [];
+    }
+}
+
+export async function fetchWorkItemDetails(ids) {
+    if (!ids || ids.length === 0) return [];
+
+    const fields = [
+        'System.Id',
+        'System.Title',
+        'System.ChangedDate',
+        'System.State',
+        'Microsoft.VSTS.Scheduling.OriginalEstimate'
+    ].join(',');
+
+    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/workitems?ids=${ids.join(',')}&fields=${fields}&api-version=${ADO_CONFIG.apiVersion}`;
+
+    try {
+        const response = await fetch(url, {
+            headers: getAuthHeader()
+        });
+
+        if (!response.ok) throw new Error(`Details Error: ${response.statusText}`);
+
+        const data = await response.json();
+        return data.value;
+    } catch (error) {
+        console.error('Error fetching details:', error);
+        return [];
+    }
+}

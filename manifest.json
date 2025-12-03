@@ -10,7 +10,8 @@
             ],
             "js": [
                 "app.js"
-            ]
+            ],
+            "type": "module"
         }
     ],
     "icons": {
