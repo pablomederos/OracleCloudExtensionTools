@@ -603,11 +603,28 @@ function populateCellWithEstimate(input, value) {
     if (!value) return;
 
     input.value = value;
+    input.focus();
 
     const inputEvent = new Event('input', { bubbles: true, cancelable: true });
     input.dispatchEvent(inputEvent);
 
-    input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+    input.dispatchEvent(changeEvent);
+
+    // Simulate Enter key to commit the value
+    const enterEvent = new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        view: window
+    });
+    input.dispatchEvent(enterEvent);
+
+    // Blur to exit edit mode
+    input.blur();
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
