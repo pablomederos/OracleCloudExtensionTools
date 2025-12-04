@@ -27,7 +27,6 @@ function findFirstEmptyCellByDate(isoDateString) {
     const dayNumber = String(dateObj.getUTCDate()).padStart(2, '0');
 
     const targetHeaderValidString = `${dayName},${monthName} ${dayNumber}`;
-    console.log(`Buscando columna para la fecha: "${targetHeaderValidString}"`);
 
     const headerContainer = document.getElementById(querySelectors.timecardDatagridColumnHeader[0].replace('#', ''));
     if (!headerContainer) {
@@ -49,7 +48,6 @@ function findFirstEmptyCellByDate(isoDateString) {
     }
 
     targetLeftPos = matchingHeader.style.left;
-    console.log(`Columna encontrada en posición left: ${targetLeftPos}`);
 
     const dataBody = document.getElementById(querySelectors.timecardDatagridDatabody[0].replace('#', ''));
     if (!dataBody) return null;
@@ -71,13 +69,11 @@ function findFirstEmptyCellByDate(isoDateString) {
 
         const isEmpty = (textContent === "" && inputValue === "");
 
-        if (isEmpty) {
-            console.log("Celda vacía encontrada:", cell);
+        if (isEmpty)
             return cell;
-        }
     }
 
-    console.log("No se encontraron celdas vacías para este día (la columna está llena).");
+    console.warn("No se encontraron celdas vacías para este día (la columna está llena).");
     return null;
 }
 
@@ -615,6 +611,10 @@ function populateCellWithEstimate(input, value) {
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle) {
+    // Mark the cell to find it later
+    const uniqueClass = `cell_${Date.now()}`;
+    emptyCell.classList.add(uniqueClass);
+
     activateEditModeOnCell(emptyCell, (input) => {
         // 1. Open comment window first
         createCommentCommand();
@@ -631,11 +631,22 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle) {
 
                 // Add hours after comment is secured
                 setTimeout(() => {
-                    populateCellWithEstimate(input, value);
+                    // Find the cell again using the marker class
+                    const targetCell = document.querySelector(`.${uniqueClass}`);
+                    if (targetCell) {
+                        // We might need to re-activate edit mode if focus was lost
+                        activateEditModeOnCell(targetCell, (newInput) => {
+                            populateCellWithEstimate(newInput, value);
+                            targetCell.classList.remove(uniqueClass);
+                        });
+                    } else {
+                        console.warn(`No se pudo encontrar la celda marcada con ${uniqueClass}`);
+                    }
                 }, 300);
             } else {
                 // 4. If comment failed, alert and don't add hours
                 alert("No se pudo agregar el comentario. Intente nuevamente.");
+                emptyCell.classList.remove(uniqueClass);
             }
         }, 300);
     });
