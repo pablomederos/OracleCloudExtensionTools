@@ -3,6 +3,7 @@
 import addStyles from './styles/dialog.js';
 import removeHeader from './utils/dom.js';
 import { showDevOpsDialog, initAzureDevOps } from './tasks/azure-devops-dialog.js';
+import { querySelectors } from './utils/selectors.js';
 
 addStyles();
 removeHeader();
@@ -19,13 +20,6 @@ const commands = {
     createComment: "true,false,true,67", // Ctrl + Alt + c
     showDevOpsDialog: "true,false,false,68", // Ctrl + d
     saveTimeCard: "true,false,false,83" // Ctrl + s
-};
-
-const querySelectors = {
-    commentOption: ['#insertComment', '#editComment'],
-    saveBtn: ['button[aria-label=Save]'],
-    commentView: ['.oj-sp-create-edit-drawer-template-main-container'],
-    query: function (selectorList) { return selectorList.map(it => document.querySelector(it)).find(it => it) },
 };
 
 const pages = {
@@ -217,7 +211,7 @@ export function populateCommentTextarea(taskId, taskTitle) {
             return;
         }
 
-        const commentView = document.querySelector('.oj-sp-create-edit-drawer-template-main-container');
+        const commentView = querySelectors.query(querySelectors.commentView)
         const textarea = commentView?.querySelector('textarea');
 
         if (textarea) {

@@ -3,15 +3,7 @@
 
 import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './azure-devops-api.js';
 import { createCommentCommand, populateCommentTextarea } from '../app.js';
-
-// Query selector helper (needs to be accessible)
-const querySelectors = {
-    devopsDialog: ['.devops-dialog']
-};
-
-function query(selectorList) {
-    return selectorList.map(it => document.querySelector(it)).find(it => it);
-}
+import { querySelectors } from '../utils/selectors.js';
 
 // Sort state
 let sortState = {
@@ -37,13 +29,13 @@ function findFirstEmptyCellByDate(isoDateString) {
     const targetHeaderValidString = `${dayName},${monthName} ${dayNumber}`;
     console.log(`Buscando columna para la fecha: "${targetHeaderValidString}"`);
 
-    const headerContainer = document.getElementById('timecard-datagrid:columnHeader');
+    const headerContainer = document.getElementById(querySelectors.timecardDatagridColumnHeader[0].replace('#', ''));
     if (!headerContainer) {
         console.error("No se encontró el contenedor de encabezados 'timecard-datagrid:columnHeader'");
         return null;
     }
 
-    const headerCells = Array.from(headerContainer.querySelectorAll('.oj-datagrid-header-cell'));
+    const headerCells = Array.from(headerContainer.querySelectorAll(querySelectors.datagridHeaderCell[0]));
 
     let targetLeftPos = null;
 
@@ -59,10 +51,10 @@ function findFirstEmptyCellByDate(isoDateString) {
     targetLeftPos = matchingHeader.style.left;
     console.log(`Columna encontrada en posición left: ${targetLeftPos}`);
 
-    const dataBody = document.getElementById('timecard-datagrid:databody');
+    const dataBody = document.getElementById(querySelectors.timecardDatagridDatabody[0].replace('#', ''));
     if (!dataBody) return null;
 
-    const allCells = Array.from(dataBody.querySelectorAll('.oj-datagrid-cell'));
+    const allCells = Array.from(dataBody.querySelectorAll(querySelectors.datagridCell[0]));
 
     const columnCells = allCells.filter(cell => cell.style.left === targetLeftPos);
 
@@ -130,7 +122,7 @@ function activateEditModeOnCell(cellElement, callback) {
 
 
 function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
-    const tbody = document.getElementById('tasksBody');
+    const tbody = document.getElementById(querySelectors.tasksBody[0].replace('#', ''));
     tbody.innerHTML = '';
 
     // Update sort state
@@ -223,7 +215,7 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
         copyBtn.onclick = () => {
             const text = `${id}: ${title.replace(':', ' ')}`;
             navigator.clipboard.writeText(text).then(() => {
-                const dialog = query(querySelectors.devopsDialog);
+                const dialog = querySelectors.query(querySelectors.devopsDialog);
                 if (dialog) dialog.close();
             });
         };
@@ -303,7 +295,7 @@ async function loadInitialData(dialog) {
 }
 
 function updateSortIndicators() {
-    const headers = document.querySelectorAll('.tasks-table th');
+    const headers = document.querySelectorAll(querySelectors.tasksTableHeader[0]);
     const columnMap = ['id', 'title', 'date', 'status', 'estimate', null]; // null for Action column
 
     headers.forEach((th, index) => {
@@ -362,7 +354,7 @@ function createTasksContent(container, dialog) {
     const addAllButton = container.querySelector('#addAllBtn');
 
     // Add click handlers to sortable headers
-    container.querySelectorAll('th[data-column]').forEach(th => {
+    container.querySelectorAll(querySelectors.sortableTableHeader[0]).forEach(th => {
         th.onclick = () => {
             const column = th.dataset.column;
             const cachedData = sessionStorage.getItem('devops_tasks_cache');
@@ -561,7 +553,7 @@ export function createDevopsDialog() {
 }
 
 export function showDevOpsDialog() {
-    let dialog = query(querySelectors.devopsDialog);
+    let dialog = querySelectors.query(querySelectors.devopsDialog);
     if (!dialog) {
         dialog = createDevopsDialog();
         document.body.appendChild(dialog);
@@ -631,20 +623,10 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle) {
 
             setTimeout(() => {
                 populateCommentTextarea(taskId, taskTitle);
-
                 setTimeout(() => {
-                    const saveBtn = document.querySelector('button[aria-label="Save"]');
+                    const commentView = querySelectors.query(querySelectors.commentView);
+                    const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
                     saveBtn?.click();
-                    
-                    setTimeout(() => {
-                        const closeBtn = document.querySelector('button[aria-label="Close"]');
-                        
-                        if(closeBtn)
-                        {
-                            closeBtn?.click();
-                            sessionStorage.setItem('dataAlreadyInserted', '1');
-                        }
-                    }, 300);
                 }, 300);
             }, 300);
         }, 200);
@@ -664,7 +646,6 @@ function processTaskInsertion(task) {
             handleCellActivation(emptyCell, originalEstimate, taskId, taskTitle);
         } else {
             console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
-            startCompletionCheck();
         }
     }, 300);
 }
@@ -684,7 +665,7 @@ function addToTimeSheet(id) {
     startCompletionCheck();
     sessionStorage.setItem('devOpsRowJSON', JSON.stringify(task));
 
-    const dialog = query(querySelectors.devopsDialog);
+    const dialog = querySelectors.query(querySelectors.devopsDialog);
     if (dialog) dialog.close();
     processTaskInsertion(task);
 }
