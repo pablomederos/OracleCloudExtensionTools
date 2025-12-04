@@ -610,46 +610,40 @@ function populateCellWithEstimate(input, value) {
     input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
 }
 
-function handleCellActivation(emptyCell, value, taskId, taskTitle) {
-    // Mark the cell to find it later
-    const uniqueClass = `cell_${Date.now()}`;
-    emptyCell.classList.add(uniqueClass);
+function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
+    // Just focus the cell to allow context menu to work
+    emptyCell.focus();
 
-    activateEditModeOnCell(emptyCell, (input) => {
-        // 1. Open comment window first
-        createCommentCommand();
+    // 1. Open comment window first
+    createCommentCommand();
 
-        setTimeout(async () => {
-            // 2. Try to populate comment and wait for result
-            const commentAdded = await populateCommentTextarea(taskId, taskTitle);
+    setTimeout(async () => {
+        // 2. Try to populate comment and wait for result
+        const commentAdded = await populateCommentTextarea(taskId, taskTitle);
 
-            if (commentAdded) {
-                // 3. If comment success, save and add hours
-                const commentView = querySelectors.query(querySelectors.commentView);
-                const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
-                saveBtn?.click();
+        if (commentAdded) {
+            // 3. If comment success, save and add hours
+            const commentView = querySelectors.query(querySelectors.commentView);
+            const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
+            saveBtn?.click();
 
-                // Add hours after comment is secured
-                setTimeout(() => {
-                    // Find the cell again using the marker class
-                    const targetCell = document.querySelector(`.${uniqueClass}`);
-                    if (targetCell) {
-                        // We might need to re-activate edit mode if focus was lost
-                        activateEditModeOnCell(targetCell, (newInput) => {
-                            populateCellWithEstimate(newInput, value);
-                            targetCell.classList.remove(uniqueClass);
-                        });
-                    } else {
-                        console.warn(`No se pudo encontrar la celda marcada con ${uniqueClass}`);
-                    }
-                }, 300);
-            } else {
-                // 4. If comment failed, alert and don't add hours
-                alert("No se pudo agregar el comentario. Intente nuevamente.");
-                emptyCell.classList.remove(uniqueClass);
-            }
-        }, 300);
-    });
+            // Add hours after comment is secured
+            setTimeout(() => {
+                // Re-fetch the cell to ensure we have a valid reference
+                const freshCell = findFirstEmptyCellByDate(taskDate);
+                if (freshCell) {
+                    activateEditModeOnCell(freshCell, (newInput) => {
+                        populateCellWithEstimate(newInput, value);
+                    });
+                } else {
+                    console.warn(`No se pudo encontrar una celda vacía para la fecha ${taskDate} al intentar insertar las horas.`);
+                }
+            }, 300);
+        } else {
+            // 4. If comment failed, alert and don't add hours
+            alert("No se pudo agregar el comentario. Intente nuevamente.");
+        }
+    }, 300);
 }
 
 function processTaskInsertion(task) {
@@ -662,7 +656,7 @@ function processTaskInsertion(task) {
         const emptyCell = findFirstEmptyCellByDate(taskDate);
 
         if (emptyCell) {
-            handleCellActivation(emptyCell, originalEstimate, taskId, taskTitle);
+            handleCellActivation(emptyCell, originalEstimate, taskId, taskTitle, taskDate);
         } else {
             console.warn('No se pudo encontrar una celda vacía para la fecha:', taskDate);
         }
