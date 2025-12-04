@@ -612,7 +612,7 @@ function populateCellWithEstimate(input, value) {
     input.dispatchEvent(changeEvent);
 
     // Simulate Enter key to commit the value
-    const enterEvent = new KeyboardEvent('keydown', {
+    const enterKeyDown = new KeyboardEvent('keydown', {
         bubbles: true,
         cancelable: true,
         key: 'Enter',
@@ -621,10 +621,18 @@ function populateCellWithEstimate(input, value) {
         which: 13,
         view: window
     });
-    input.dispatchEvent(enterEvent);
+    input.dispatchEvent(enterKeyDown);
 
-    // Blur to exit edit mode
-    input.blur();
+    const enterKeyUp = new KeyboardEvent('keyup', {
+        bubbles: true,
+        cancelable: true,
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        view: window
+    });
+    input.dispatchEvent(enterKeyUp);
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
@@ -641,7 +649,7 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             const commentView = querySelectors.query(querySelectors.commentView);
             const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
             saveBtn?.click();
-
+        
             // Add hours after comment is secured
             setTimeout(() => {
                 // Re-fetch the cell to ensure we have a valid reference

@@ -1,6 +1,6 @@
 # Oracle Cloud Tools
 
-Este proyecto es una extensión de Chromium diseñada para mejorar la experiencia de usuario en el sitio de Oracle Cloud, específicamente agregando funcionalidades avanzadas para la gestión de timesheets (hojas de tiempo) en tablas construidas con Oracle JET.
+Este proyecto es una extensión de Chromium diseñada para mejorar la experiencia de usuario en el sitio de Oracle Cloud, específicamente agregando funcionalidades avanzadas para la gestión de timesheets (hojas de tiempo) en tablas construidas con Oracle JET Data Grid.
 
 La extensión permite agilizar la carga de horas integrándose directamente con **Azure DevOps**, permitiendo importar tareas, capturar estimados de horas y automatizar la creación de comentarios.
 
