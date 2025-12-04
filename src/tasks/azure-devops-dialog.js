@@ -616,20 +616,28 @@ function populateCellWithEstimate(input, value) {
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle) {
     activateEditModeOnCell(emptyCell, (input) => {
-        populateCellWithEstimate(input, value);
+        // 1. Open comment window first
+        createCommentCommand();
 
-        setTimeout(() => {
-            createCommentCommand();
+        setTimeout(async () => {
+            // 2. Try to populate comment and wait for result
+            const commentAdded = await populateCommentTextarea(taskId, taskTitle);
 
-            setTimeout(() => {
-                populateCommentTextarea(taskId, taskTitle);
+            if (commentAdded) {
+                // 3. If comment success, save and add hours
+                const commentView = querySelectors.query(querySelectors.commentView);
+                const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
+                saveBtn?.click();
+
+                // Add hours after comment is secured
                 setTimeout(() => {
-                    const commentView = querySelectors.query(querySelectors.commentView);
-                    const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
-                    saveBtn?.click();
+                    populateCellWithEstimate(input, value);
                 }, 300);
-            }, 300);
-        }, 200);
+            } else {
+                // 4. If comment failed, alert and don't add hours
+                alert("No se pudo agregar el comentario. Intente nuevamente.");
+            }
+        }, 300);
     });
 }
 

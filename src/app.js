@@ -205,25 +205,29 @@ function saveTimecard() {
 export function populateCommentTextarea(taskId, taskTitle) {
     const commentText = `${taskId}: ${taskTitle}`;
 
-    const tryPopulate = (attempts = 0) => {
-        if (attempts > 10) {
-            console.warn('No se pudo encontrar el textarea de comentarios');
-            return;
-        }
+    return new Promise((resolve) => {
+        const tryPopulate = (attempts = 0) => {
+            if (attempts > 10) {
+                console.warn('No se pudo encontrar el textarea de comentarios');
+                resolve(false);
+                return;
+            }
 
-        const commentView = querySelectors.query(querySelectors.commentView)
-        const textarea = commentView?.querySelector('textarea');
+            const commentView = querySelectors.query(querySelectors.commentView)
+            const textarea = commentView?.querySelector('textarea');
 
-        if (textarea) {
-            textarea.value = commentText;
-            textarea.focus();
+            if (textarea) {
+                textarea.value = commentText;
+                textarea.focus();
 
-            const inputEvent = new Event('input', { bubbles: true });
-            textarea.dispatchEvent(inputEvent);
-        } else {
-            setTimeout(() => tryPopulate(attempts + 1), 200);
-        }
-    };
+                const inputEvent = new Event('input', { bubbles: true });
+                textarea.dispatchEvent(inputEvent);
+                resolve(true);
+            } else {
+                setTimeout(() => tryPopulate(attempts + 1), 200);
+            }
+        };
 
-    tryPopulate();
+        tryPopulate();
+    });
 }
