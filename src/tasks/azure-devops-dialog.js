@@ -599,8 +599,22 @@ function createAndAppendButton(container) {
 }
 
 // Time sheet integration functions
+function getKo() {
+    return new Promise((resolve) => {
+        if (window.ko) {
+            resolve(window.ko);
+        } else if (window.require) {
+            window.require(['knockout'], (ko) => {
+                resolve(ko);
+            });
+        } else {
+            resolve(null);
+        }
+    });
+}
+
 function updateGridModel(cell, value) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
             // 1. Get the grid element
             const grid = querySelectors.query(querySelectors.timecardDatagrid);
@@ -612,10 +626,10 @@ function updateGridModel(cell, value) {
             }
 
             // 2. Get Knockout data for the cell
-            // This relies on the script running in the page context where 'ko' is available
-            const ko = window.ko;
+            const ko = await getKo();
+
             if (!ko) {
-                console.error("Knockout (ko) not found in window context");
+                console.error("Knockout (ko) not found in window context or via require");
                 resolve(false);
                 return;
             }
@@ -629,8 +643,6 @@ function updateGridModel(cell, value) {
             } else if (cellData && typeof cellData.data !== 'undefined') {
                 console.log("Found non-observable data for cell, updating and requesting refresh");
                 cellData.data = value;
-                // If it's not observable, we might need to trigger a UI refresh manually or hope the grid picks it up
-                // Often in JET, data properties are observables.
                 resolve(true);
             } else {
                 console.warn("Could not find Knockout data for cell", cellData);
