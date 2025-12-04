@@ -631,6 +631,21 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle) {
 
             setTimeout(() => {
                 populateCommentTextarea(taskId, taskTitle);
+
+                setTimeout(() => {
+                    const saveBtn = document.querySelector('button[aria-label="Save"]');
+                    saveBtn?.click();
+                    
+                    setTimeout(() => {
+                        const closeBtn = document.querySelector('button[aria-label="Close"]');
+                        
+                        if(closeBtn)
+                        {
+                            closeBtn?.click();
+                            sessionStorage.setItem('dataAlreadyInserted', '1');
+                        }
+                    }, 300);
+                }, 300);
             }, 300);
         }, 200);
     });
@@ -666,11 +681,11 @@ function addToTimeSheet(id) {
         return;
     }
 
+    startCompletionCheck();
     sessionStorage.setItem('devOpsRowJSON', JSON.stringify(task));
 
     const dialog = query(querySelectors.devopsDialog);
     if (dialog) dialog.close();
-
     processTaskInsertion(task);
 }
 
