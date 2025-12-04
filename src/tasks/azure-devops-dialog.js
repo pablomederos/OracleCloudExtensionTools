@@ -605,34 +605,35 @@ function populateCellWithEstimate(input, value) {
     input.value = value;
     input.focus();
 
+    // Dispatch input and change to ensure model update
     const inputEvent = new Event('input', { bubbles: true, cancelable: true });
     input.dispatchEvent(inputEvent);
 
     const changeEvent = new Event('change', { bubbles: true, cancelable: true });
     input.dispatchEvent(changeEvent);
 
-    // Simulate Enter key to commit the value
-    const enterKeyDown = new KeyboardEvent('keydown', {
+    // Simulate Tab key to commit and move/exit
+    const tabKeyDown = new KeyboardEvent('keydown', {
         bubbles: true,
         cancelable: true,
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
+        key: 'Tab',
+        code: 'Tab',
+        keyCode: 9,
+        which: 9,
         view: window
     });
-    input.dispatchEvent(enterKeyDown);
+    input.dispatchEvent(tabKeyDown);
 
-    const enterKeyUp = new KeyboardEvent('keyup', {
+    const tabKeyUp = new KeyboardEvent('keyup', {
         bubbles: true,
         cancelable: true,
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
+        key: 'Tab',
+        code: 'Tab',
+        keyCode: 9,
+        which: 9,
         view: window
     });
-    input.dispatchEvent(enterKeyUp);
+    input.dispatchEvent(tabKeyUp);
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
@@ -649,7 +650,7 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             const commentView = querySelectors.query(querySelectors.commentView);
             const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
             saveBtn?.click();
-        
+
             // Add hours after comment is secured
             setTimeout(() => {
                 // Re-fetch the cell to ensure we have a valid reference
