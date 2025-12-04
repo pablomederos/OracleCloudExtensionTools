@@ -7,8 +7,8 @@ import { querySelectors } from '../utils/selectors.js';
 
 // Sort state
 let sortState = {
-    column: 'date', // default sort by date
-    ascending: false // newest first
+    column: 'date',
+    ascending: false
 };
 
 function findFirstEmptyCellByDate(isoDateString) {
@@ -82,17 +82,14 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
     const tbody = document.getElementById(querySelectors.tasksBody[0].replace('#', ''));
     tbody.innerHTML = '';
 
-    // Update sort state
     sortState.column = sortColumn;
     sortState.ascending = ascending;
 
-    // Update header indicators
     updateSortIndicators();
 
     let lastDate = null;
     let useGray = false;
 
-    // Sort the work items based on the selected column
     const sortedItems = [...workItems].sort((a, b) => {
         let valA, valB;
 
@@ -137,7 +134,6 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
         const status = fields['System.State'];
         const estimate = fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '-';
 
-        // Date grouping logic
         if (date !== lastDate) {
             useGray = !useGray;
             lastDate = date;
@@ -156,7 +152,6 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
 
         const actionTd = document.createElement('td');
 
-        // Add to Time Sheet button
         const btn = document.createElement('button');
         btn.textContent = '⏱️';
         btn.title = 'Add to Time Sheet';
@@ -214,7 +209,6 @@ async function loadInitialData(dialog) {
     const usernameInput = dialog.querySelector('#username');
     const searchBtn = dialog.querySelector('#searchBtn');
 
-    // Set default dates if not set
     if (!startDateInput.value || !endDateInput.value) {
         const today = new Date();
         const yesterday = new Date(today);
@@ -224,7 +218,6 @@ async function loadInitialData(dialog) {
         endDateInput.value = today.toISOString().split('T')[0];
     }
 
-    // Load username
     const storedUsername = localStorage.getItem('devops_username');
     if (storedUsername) {
         usernameInput.value = storedUsername;
@@ -253,16 +246,14 @@ async function loadInitialData(dialog) {
 
 function updateSortIndicators() {
     const headers = document.querySelectorAll(querySelectors.tasksTableHeader[0]);
-    const columnMap = ['id', 'title', 'date', 'status', 'estimate', null]; // null for Action column
+    const columnMap = ['id', 'title', 'date', 'status', 'estimate', null];
 
     headers.forEach((th, index) => {
         const column = columnMap[index];
-        if (!column) return; // Skip Action column
+        if (!column) return;
 
-        // Remove existing indicators
         th.textContent = th.textContent.replace(/ [↑↓]/g, '');
 
-        // Add indicator if this is the sorted column
         if (column === sortState.column) {
             th.textContent += sortState.ascending ? ' ↑' : ' ↓';
         }
@@ -304,13 +295,11 @@ function createTasksContent(container, dialog) {
         </div>
     `;
 
-    // Get references to elements
     const startDateInput = container.querySelector('#startDate');
     const endDateInput = container.querySelector('#endDate');
     const searchBtn = container.querySelector('#searchBtn');
     const addAllButton = container.querySelector('#addAllBtn');
 
-    // Add click handlers to sortable headers
     container.querySelectorAll(querySelectors.sortableTableHeader[0]).forEach(th => {
         th.onclick = () => {
             const column = th.dataset.column;
@@ -366,7 +355,6 @@ function createTasksContent(container, dialog) {
             sessionStorage.setItem('devOpsCompleteJSON', cachedData);
             alert('All tasks saved to sessionStorage (devOpsCompleteJSON)!');
 
-            // Close dialog and start check
             if (dialog) dialog.close();
 
             startCompletionCheck();
@@ -403,18 +391,15 @@ function createSettingsContent(container, dialog) {
         </div>
     `;
 
-    // Get references to elements
     const usernameInput = container.querySelector('#username');
     const tokenInput = container.querySelector('#adoToken');
     const saveSettingsBtn = container.querySelector('#saveSettingsBtn');
 
-    // Username input handler
     usernameInput.oninput = () => {
         localStorage.setItem('devops_username', usernameInput.value);
         updateSearchButtonState(dialog);
     };
 
-    // Save settings handler
     saveSettingsBtn.onclick = () => {
         const newOrgUrl = container.querySelector('#adoOrgUrl').value.trim();
         const newProject = container.querySelector('#adoProject').value.trim();
@@ -465,21 +450,17 @@ export function createDevopsDialog() {
         </div>
     `;
 
-    // Get references to elements
     const closeBtn = dialog.querySelector('.close-btn');
     const tasksTabBtn = dialog.querySelector('[data-tab="tasks"]');
     const settingsTabBtn = dialog.querySelector('[data-tab="settings"]');
     const tasksContent = dialog.querySelector('[data-content="tasks"]');
     const settingsContent = dialog.querySelector('[data-content="settings"]');
 
-    // Close button handler
     closeBtn.onclick = () => dialog.close();
 
-    // Create tab contents
     createTasksContent(tasksContent, dialog);
     createSettingsContent(settingsContent, dialog);
 
-    // Tab switching logic
     tasksTabBtn.onclick = () => {
         tasksTabBtn.classList.add('active');
         tasksTabBtn.style.borderBottom = '2px solid #0078d4';
@@ -538,7 +519,7 @@ function addDevOpsButton() {
 }
 
 function createAndAppendButton(container) {
-    if (container.querySelector('.devops-btn')) return; // Prevent duplicates
+    if (container.querySelector('.devops-btn')) return;
 
     const button = document.createElement('button');
     button.textContent = 'Add from DevOps';
@@ -563,21 +544,16 @@ function createAndAppendButton(container) {
 
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
-
-    // 1. Open comment window first
     createCommentCommand(emptyCell);
 
     setTimeout(async () => {
-        // 2. Try to populate comment and wait for result
         const commentAdded = await populateCommentTextarea(taskId, taskTitle);
 
         if (commentAdded) {
-            // 3. If comment success, save and add hours
             const commentView = querySelectors.query(querySelectors.commentView);
             const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
             saveBtn?.click();
         } else {
-            // 4. If comment failed, alert and don't add hours
             alert("No se pudo agregar el comentario. Intente nuevamente.");
         }
     }, 300);
