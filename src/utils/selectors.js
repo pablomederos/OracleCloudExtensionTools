@@ -7,6 +7,7 @@ export const querySelectors = {
     banner: ['div:has(>table[role=presentation])', '.oj-sp-banner-container.oj-sp-banner-layout.oj-private-scale-lg.oj-sp-common-banner-content-layout'],
 
     // Oracle JET Data Grid
+    timecardDatagrid: ['#timecard-datagrid'],
     timecardDatagridColumnHeader: ['#timecard-datagrid:columnHeader'],
     timecardDatagridDatabody: ['#timecard-datagrid:databody'],
     datagridHeaderCell: ['.oj-datagrid-header-cell'],

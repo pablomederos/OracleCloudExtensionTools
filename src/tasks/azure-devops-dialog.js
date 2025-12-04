@@ -603,8 +603,7 @@ function updateGridModel(cell, value) {
     return new Promise((resolve, reject) => {
         try {
             // 1. Get the grid element
-            const gridId = querySelectors.timecardDatagrid[0].replace('#', '');
-            const grid = document.getElementById(gridId);
+            const grid = querySelectors.query(querySelectors.timecardDatagrid);
 
             if (!grid) {
                 console.error("Grid element not found");
