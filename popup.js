@@ -6,7 +6,7 @@
         azureDevOps: {
             id: 'toggle-azure-devops',
             storageKey: 'feature_azure_devops',
-            defaultValue: false // Default to disabled
+            defaultValue: false
         }
     };
 
@@ -24,10 +24,8 @@
 
     // Save feature state
     async function saveFeatureState(feature, enabled) {
-        // Save to chrome.storage
         await chrome.storage.local.set({ [feature.storageKey]: enabled });
 
-        // Reload the page to apply changes
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 chrome.tabs.reload(tabs[0].id);
@@ -35,11 +33,9 @@
         });
     }
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
         await loadFeatureStates();
 
-        // Setup toggle listeners
         Object.values(FEATURES).forEach(feature => {
             const toggle = document.getElementById(feature.id);
             if (toggle) {

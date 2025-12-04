@@ -3,18 +3,15 @@
 ; (async function () {
     'use strict';
 
-    // Load feature flags from chrome.storage
     const settings = await chrome.storage.local.get('feature_azure_devops');
     const featureFlags = {
         azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true'
     };
 
-    // Inject config script that listens for the config
     const configScript = document.createElement('script');
     configScript.src = chrome.runtime.getURL('config.js');
     (document.head || document.documentElement).appendChild(configScript);
 
-    // Wait for config script to load, then send config via custom event
     configScript.onload = () => {
         window.postMessage({
             type: 'ORACLE_TOOLS_CONFIG',
@@ -22,7 +19,6 @@
         }, '*');
     };
 
-    // List of module files to inject in order
     const moduleFiles = [
         'src/styles/dialog.js',
         'src/utils/dom.js',
@@ -31,7 +27,6 @@
         'src/app.js'
     ];
 
-    // Inject each module file as a script tag
     moduleFiles.forEach(file => {
         const script = document.createElement('script');
         script.type = 'module';

@@ -17,9 +17,9 @@ let altKeyCode = 0;
 let actionkeyPressedCode = 0;
 
 const commands = {
-    createComment: "true,false,true,67", // Ctrl + Alt + c
-    showDevOpsDialog: "true,false,false,68", // Ctrl + d
-    saveTimeCard: "true,false,false,83" // Ctrl + s
+    createComment: "true,false,true,67",
+    showDevOpsDialog: "true,false,false,68",
+    saveTimeCard: "true,false,false,83"
 };
 
 const pages = {
@@ -29,57 +29,43 @@ const pages = {
 initListeners();
 
 function initListeners() {
-    // Initialize Azure DevOps integration (if enabled)
-    // Config is injected by loader.js as window.ORACLE_TOOLS_CONFIG
     if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) {
         initAzureDevOps();
     }
 
-    // Register key pressed
     document.addEventListener('keydown', onKeyDown);
-
-    // Clear key pressed
     document.addEventListener('keyup', onKeyUp);
 }
 
 function onKeyDown(ev) {
-    // Ignore with class name
     if (
         [
             'control-group'
         ].some(it => ev.target.classList.contains('it'))
     ) return;
 
-    // Enable
     ctrlBtnPressed = ctrlBtnPressed || ev.ctrlKey;
     shiftBtnPressed = shiftBtnPressed || ev.shiftKey;
     altBtnPressed = altBtnPressed || ev.altKey;
 
-    // Save Keycode
     if (!ctrlKeyCode && ev.ctrlKey) ctrlKeyCode = ev.keyCode;
 
     if (!shiftKeyCode && ev.shiftKey) shiftKeyCode = ev.keyCode;
 
     if (!altKeyCode && ev.altKey) altKeyCode = ev.keyCode;
 
-    // Register other keys
     if (
         ![ctrlKeyCode, shiftKeyCode, altKeyCode]
             .some(it => it === ev.keyCode)
     ) actionkeyPressedCode = parseInt(ev.keyCode);
 
-    // Check if this is a script command
     if (isScriptCommand()) {
-        // Prevent browser default behavior for our commands
         ev.preventDefault();
         checkCommand();
     }
-    // Otherwise, let browser handle it normally (Ctrl+C, Ctrl+V, etc.)
 }
 
 function onKeyUp(ev) {
-    // Clear key registers
-
     switch (ev.keyCode) {
         case ctrlKeyCode: ctrlBtnPressed = false;
             break;
@@ -98,12 +84,11 @@ function isAlterKeyPressed() { return ctrlBtnPressed || shiftBtnPressed || altBt
 
 function isScriptCommand() {
     const keyCombinations = [
-        ctrlBtnPressed, shiftBtnPressed, altBtnPressed, // alter keys
-        actionkeyPressedCode, // action key
-        window.location.pathname // context
+        ctrlBtnPressed, shiftBtnPressed, altBtnPressed,
+        actionkeyPressedCode,
+        window.location.pathname
     ].join(',');
 
-    // Check if it matches any of our defined commands
     const scriptCommands = [
         `${commands.createComment},${pages.timecardsPage}`,
         `${commands.showDevOpsDialog},${pages.timecardsPage}`,
@@ -116,9 +101,9 @@ function isScriptCommand() {
 function checkCommand() {
 
     const keyCombinations = [
-        ctrlBtnPressed, shiftBtnPressed, altBtnPressed, // alter keys
-        actionkeyPressedCode, // action key
-        window.location.pathname // context
+        ctrlBtnPressed, shiftBtnPressed, altBtnPressed,
+        actionkeyPressedCode,
+        window.location.pathname
     ].join(',');
 
 
@@ -127,7 +112,6 @@ function checkCommand() {
             createCommentCommand();
             break;
         case `${commands.showDevOpsDialog},${pages.timecardsPage}`:
-            // Only show if Azure DevOps is enabled
             if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) {
                 showDevOpsDialog();
             }

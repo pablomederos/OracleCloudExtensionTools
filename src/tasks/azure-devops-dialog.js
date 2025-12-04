@@ -77,45 +77,6 @@ function findFirstEmptyCellByDate(isoDateString) {
     return null;
 }
 
-function activateEditModeOnCell(cellElement, callback) {
-    if (!cellElement) {
-        console.error("No se proporcionó una celda válida.");
-        return;
-    }
-
-    cellElement.focus();
-
-    const clickEvent = new MouseEvent('click', {
-        view: window,
-        bubbles: true,
-        cancelable: true
-    });
-    cellElement.dispatchEvent(clickEvent);
-
-    setTimeout(() => {
-        const dblClick = new MouseEvent('dblclick', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-        });
-
-        const success = cellElement.dispatchEvent(dblClick);
-        if (success) {
-
-            setTimeout(() => {
-                const input = cellElement.querySelector('input, textarea');
-                if (input) {
-                    input.focus();
-
-                    if (callback) callback(input);
-                } else {
-                    console.warn("No se encontró input dentro de la celda.");
-                }
-            }, 100);
-        }
-    }, 150);
-}
-
 
 function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
     const tbody = document.getElementById(querySelectors.tasksBody[0].replace('#', ''));
@@ -599,134 +560,7 @@ function createAndAppendButton(container) {
 }
 
 // Time sheet integration functions
-function getKo() {
-    return new Promise((resolve) => {
-        if (window.ko) {
-            resolve(window.ko);
-        } else if (window.require) {
-            window.require(['knockout'], (ko) => {
-                resolve(ko);
-            });
-        } else {
-            resolve(null);
-        }
-    });
-}
 
-function updateGridModel(cell, value) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            // 1. Get the grid element
-            const grid = querySelectors.query(querySelectors.timecardDatagrid);
-
-            if (!grid) {
-                console.error("Grid element not found");
-                resolve(false);
-                return;
-            }
-
-            const ko = await getKo();
-            if (!ko) {
-                console.error("Knockout not found");
-                resolve(false);
-                return;
-            }
-
-            // 2. Try to get context from the Grid component
-            // This is specific to oj-data-grid and usually more reliable for finding keys
-            if (typeof grid.getContextByNode === 'function') {
-                const context = grid.getContextByNode(cell);
-                console.log("Grid Context:", context);
-
-                if (context && context.keys) {
-                    const rowKey = context.keys.row;
-                    const colKey = context.keys.column;
-
-                    console.log(`Targeting Row: ${rowKey}, Column: ${colKey}`);
-
-                    const dataProvider = grid.data;
-
-                    if (dataProvider) {
-                        // Fetch the row data
-                        // Most DataProviders support fetchByKeys
-                        if (typeof dataProvider.fetchByKeys === 'function') {
-                            try {
-                                const fetchResult = await dataProvider.fetchByKeys({ keys: new Set([rowKey]) });
-                                const item = fetchResult.results.get(rowKey);
-
-                                if (item && item.data) {
-                                    const rowData = item.data;
-                                    console.log("Row Data:", rowData);
-
-                                    // Try to update the property matching the column key
-                                    // In many grids, the column key IS the property name
-                                    if (colKey && rowData.hasOwnProperty(colKey)) {
-                                        if (ko.isObservable(rowData[colKey])) {
-                                            console.log(`Updating observable property: ${colKey}`);
-                                            rowData[colKey](value);
-                                            resolve(true);
-                                            return;
-                                        } else {
-                                            console.log(`Updating non-observable property: ${colKey}`);
-                                            rowData[colKey] = value;
-
-                                            // If not observable, we might need to notify the provider
-                                            if (typeof dataProvider.updateItem === 'function') {
-                                                console.log("Calling dataProvider.updateItem");
-                                                await dataProvider.updateItem({
-                                                    metadata: { key: rowKey },
-                                                    data: rowData
-                                                });
-                                                resolve(true);
-                                                return;
-                                            }
-                                            // If we can't updateItem, maybe the grid will pick it up on refresh?
-                                            // But usually non-observable changes need a signal.
-                                            resolve(true);
-                                            return;
-                                        }
-                                    } else {
-                                        console.warn(`Column key ${colKey} not found in row data properties.`);
-                                    }
-                                }
-                            } catch (err) {
-                                console.error("Error fetching/updating row from DataProvider:", err);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 3. Fallback: Try to find observable in the cell context (previous strategy, refined)
-            // We know 'ko.dataFor(cell)' returned the global context, so let's try to dig deeper 
-            // or check if the cell has a specific binding context that we missed.
-
-            // Sometimes the cell content is wrapped in a div that has the actual data context
-            const children = cell.querySelectorAll('*');
-            for (let child of children) {
-                const childData = ko.dataFor(child);
-                if (childData && childData !== ko.dataFor(document.body)) { // Filter out global context
-                    // Check if this looks like our cell data
-                    // This is heuristic
-                    if (ko.isObservable(childData) || (childData.data && ko.isObservable(childData.data))) {
-                        console.log("Found likely cell data on child node:", child);
-                        if (ko.isObservable(childData)) childData(value);
-                        else childData.data(value);
-                        resolve(true);
-                        return;
-                    }
-                }
-            }
-
-            console.warn("Could not find target to update via Grid Context or Child Nodes.");
-            resolve(false);
-
-        } catch (e) {
-            console.error("Error updating grid model", e);
-            resolve(false);
-        }
-    });
-}
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
 
@@ -742,23 +576,6 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             const commentView = querySelectors.query(querySelectors.commentView);
             const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
             saveBtn?.click();
-
-            // Add hours after comment is secured
-            setTimeout(async () => {
-                // Re-fetch the cell to ensure we have a valid reference
-                const freshCell = findFirstEmptyCellByDate(taskDate);
-                if (freshCell) {
-                    // Use direct model update instead of UI simulation
-                    const success = await updateGridModel(freshCell, value);
-
-                    if (!success) {
-                        console.warn("Direct model update failed, falling back to simple value set (might not save)");
-                        freshCell.innerText = value;
-                    }
-                } else {
-                    console.warn(`No se pudo encontrar una celda vacía para la fecha ${taskDate} al intentar insertar las horas.`);
-                }
-            }, 300);
         } else {
             // 4. If comment failed, alert and don't add hours
             alert("No se pudo agregar el comentario. Intente nuevamente.");
