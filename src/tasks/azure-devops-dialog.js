@@ -599,41 +599,41 @@ function createAndAppendButton(container) {
 }
 
 // Time sheet integration functions
+function simulateKey(element, key, code, keyCode) {
+    const event = new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key: key,
+        code: code,
+        keyCode: keyCode,
+        which: keyCode,
+        view: window
+    });
+    element.dispatchEvent(event);
+
+    const upEvent = new KeyboardEvent('keyup', {
+        bubbles: true,
+        cancelable: true,
+        key: key,
+        code: code,
+        keyCode: keyCode,
+        which: keyCode,
+        view: window
+    });
+    element.dispatchEvent(upEvent);
+}
+
 function populateCellWithEstimate(input, value) {
     if (!value) return;
 
-    input.value = value;
     input.focus();
+    input.value = value;
 
-    // Dispatch input and change to ensure model update
-    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-    input.dispatchEvent(inputEvent);
+    // Dispatch input to register change
+    input.dispatchEvent(new Event('input', { bubbles: true }));
 
-    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-    input.dispatchEvent(changeEvent);
-
-    // Simulate Tab key to commit and move/exit
-    const tabKeyDown = new KeyboardEvent('keydown', {
-        bubbles: true,
-        cancelable: true,
-        key: 'Tab',
-        code: 'Tab',
-        keyCode: 9,
-        which: 9,
-        view: window
-    });
-    input.dispatchEvent(tabKeyDown);
-
-    const tabKeyUp = new KeyboardEvent('keyup', {
-        bubbles: true,
-        cancelable: true,
-        key: 'Tab',
-        code: 'Tab',
-        keyCode: 9,
-        which: 9,
-        view: window
-    });
-    input.dispatchEvent(tabKeyUp);
+    // Commit with Enter
+    simulateKey(input, 'Enter', 'Enter', 13);
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
@@ -656,9 +656,24 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
                 // Re-fetch the cell to ensure we have a valid reference
                 const freshCell = findFirstEmptyCellByDate(taskDate);
                 if (freshCell) {
-                    activateEditModeOnCell(freshCell, (newInput) => {
-                        populateCellWithEstimate(newInput, value);
-                    });
+                    freshCell.focus();
+                    freshCell.click(); // Ensure selection
+
+                    // Simulate F2 to enter edit mode
+                    simulateKey(freshCell, 'F2', 'F2', 113);
+
+                    // Wait for input to appear
+                    setTimeout(() => {
+                        const input = freshCell.querySelector('input');
+                        if (input) {
+                            populateCellWithEstimate(input, value);
+                        } else {
+                            // Fallback to double click if F2 didn't work
+                            activateEditModeOnCell(freshCell, (newInput) => {
+                                populateCellWithEstimate(newInput, value);
+                            });
+                        }
+                    }, 100);
                 } else {
                     console.warn(`No se pudo encontrar una celda vacía para la fecha ${taskDate} al intentar insertar las horas.`);
                 }
