@@ -625,72 +625,100 @@ function updateGridModel(cell, value) {
                 return;
             }
 
-            // 2. Get Knockout data for the cell
             const ko = await getKo();
-
             if (!ko) {
-                console.error("Knockout (ko) not found in window context or via require");
+                console.error("Knockout not found");
                 resolve(false);
                 return;
             }
 
-            // Helper to check and update data
-            const tryUpdate = (target, name) => {
-                const data = ko.dataFor(target);
-                console.log(`Checking data for ${name}:`, data);
+            // 2. Try to get context from the Grid component
+            // This is specific to oj-data-grid and usually more reliable for finding keys
+            if (typeof grid.getContextByNode === 'function') {
+                const context = grid.getContextByNode(cell);
+                console.log("Grid Context:", context);
 
-                if (data) {
-                    if (ko.isObservable(data)) {
-                        console.log(`Found observable on ${name}, updating.`);
-                        data(value);
-                        return true;
-                    } else if (data.data && ko.isObservable(data.data)) {
-                        console.log(`Found observable data.data on ${name}, updating.`);
-                        data.data(value);
-                        return true;
-                    } else if (typeof data === 'object') {
-                        // Sometimes the data is an object with properties that are observable
-                        // We need to find the right property. 
-                        // In a grid, it might be 'value', 'data', or the property name itself if we knew it.
-                        // Let's try to find a likely candidate if we can't find 'data'
-                        console.log(`Found object data on ${name}, inspecting keys:`, Object.keys(data));
+                if (context && context.keys) {
+                    const rowKey = context.keys.row;
+                    const colKey = context.keys.column;
 
-                        if (ko.isObservable(data.value)) {
-                            console.log(`Found observable data.value on ${name}, updating.`);
-                            data.value(value);
-                            return true;
+                    console.log(`Targeting Row: ${rowKey}, Column: ${colKey}`);
+
+                    const dataProvider = grid.data;
+
+                    if (dataProvider) {
+                        // Fetch the row data
+                        // Most DataProviders support fetchByKeys
+                        if (typeof dataProvider.fetchByKeys === 'function') {
+                            try {
+                                const fetchResult = await dataProvider.fetchByKeys({ keys: new Set([rowKey]) });
+                                const item = fetchResult.results.get(rowKey);
+
+                                if (item && item.data) {
+                                    const rowData = item.data;
+                                    console.log("Row Data:", rowData);
+
+                                    // Try to update the property matching the column key
+                                    // In many grids, the column key IS the property name
+                                    if (colKey && rowData.hasOwnProperty(colKey)) {
+                                        if (ko.isObservable(rowData[colKey])) {
+                                            console.log(`Updating observable property: ${colKey}`);
+                                            rowData[colKey](value);
+                                            resolve(true);
+                                            return;
+                                        } else {
+                                            console.log(`Updating non-observable property: ${colKey}`);
+                                            rowData[colKey] = value;
+
+                                            // If not observable, we might need to notify the provider
+                                            if (typeof dataProvider.updateItem === 'function') {
+                                                console.log("Calling dataProvider.updateItem");
+                                                await dataProvider.updateItem({
+                                                    metadata: { key: rowKey },
+                                                    data: rowData
+                                                });
+                                                resolve(true);
+                                                return;
+                                            }
+                                            // If we can't updateItem, maybe the grid will pick it up on refresh?
+                                            // But usually non-observable changes need a signal.
+                                            resolve(true);
+                                            return;
+                                        }
+                                    } else {
+                                        console.warn(`Column key ${colKey} not found in row data properties.`);
+                                    }
+                                }
+                            } catch (err) {
+                                console.error("Error fetching/updating row from DataProvider:", err);
+                            }
                         }
                     }
                 }
-                return false;
-            };
+            }
 
-            // Strategy 1: Check the cell itself
-            if (tryUpdate(cell, "cell")) { resolve(true); return; }
+            // 3. Fallback: Try to find observable in the cell context (previous strategy, refined)
+            // We know 'ko.dataFor(cell)' returned the global context, so let's try to dig deeper 
+            // or check if the cell has a specific binding context that we missed.
 
-            // Strategy 2: Check the first child (often a wrapper div or span)
-            if (cell.firstElementChild && tryUpdate(cell.firstElementChild, "cell.firstElementChild")) { resolve(true); return; }
-
-            // Strategy 3: Check the parent row (tr)
-            // Note: Row data usually contains the whole record. We'd need to know WHICH field to update.
-            // This is harder without knowing the field name. 
-            // However, sometimes the cell context is just the row context + some metadata.
-
-            // Strategy 4: Oracle JET Context
-            if (window.oj && window.oj.Context) {
-                const context = window.oj.Context.getContext(cell);
-                const bindingContext = context ? context.getBindingContext() : null;
-                console.log("OJ Context:", bindingContext);
-
-                if (bindingContext && bindingContext.$data) {
-                    // Similar checks on $data
-                    const data = bindingContext.$data;
-                    if (ko.isObservable(data)) { data(value); resolve(true); return; }
-                    if (data.data && ko.isObservable(data.data)) { data.data(value); resolve(true); return; }
+            // Sometimes the cell content is wrapped in a div that has the actual data context
+            const children = cell.querySelectorAll('*');
+            for (let child of children) {
+                const childData = ko.dataFor(child);
+                if (childData && childData !== ko.dataFor(document.body)) { // Filter out global context
+                    // Check if this looks like our cell data
+                    // This is heuristic
+                    if (ko.isObservable(childData) || (childData.data && ko.isObservable(childData.data))) {
+                        console.log("Found likely cell data on child node:", child);
+                        if (ko.isObservable(childData)) childData(value);
+                        else childData.data(value);
+                        resolve(true);
+                        return;
+                    }
                 }
             }
 
-            console.warn("Could not find suitable Knockout observable to update.");
+            console.warn("Could not find target to update via Grid Context or Child Nodes.");
             resolve(false);
 
         } catch (e) {
