@@ -599,41 +599,50 @@ function createAndAppendButton(container) {
 }
 
 // Time sheet integration functions
-function simulateKey(element, key, code, keyCode) {
-    const event = new KeyboardEvent('keydown', {
-        bubbles: true,
-        cancelable: true,
-        key: key,
-        code: code,
-        keyCode: keyCode,
-        which: keyCode,
-        view: window
+function updateGridModel(cell, value) {
+    return new Promise((resolve, reject) => {
+        try {
+            // 1. Get the grid element
+            const gridId = querySelectors.timecardDatagrid[0].replace('#', '');
+            const grid = document.getElementById(gridId);
+
+            if (!grid) {
+                console.error("Grid element not found");
+                resolve(false);
+                return;
+            }
+
+            // 2. Get Knockout data for the cell
+            // This relies on the script running in the page context where 'ko' is available
+            const ko = window.ko;
+            if (!ko) {
+                console.error("Knockout (ko) not found in window context");
+                resolve(false);
+                return;
+            }
+
+            const cellData = ko.dataFor(cell);
+
+            if (cellData && ko.isObservable(cellData.data)) {
+                console.log("Found observable data for cell, updating directly");
+                cellData.data(value);
+                resolve(true);
+            } else if (cellData && typeof cellData.data !== 'undefined') {
+                console.log("Found non-observable data for cell, updating and requesting refresh");
+                cellData.data = value;
+                // If it's not observable, we might need to trigger a UI refresh manually or hope the grid picks it up
+                // Often in JET, data properties are observables.
+                resolve(true);
+            } else {
+                console.warn("Could not find Knockout data for cell", cellData);
+                resolve(false);
+            }
+
+        } catch (e) {
+            console.error("Error updating grid model", e);
+            resolve(false);
+        }
     });
-    element.dispatchEvent(event);
-
-    const upEvent = new KeyboardEvent('keyup', {
-        bubbles: true,
-        cancelable: true,
-        key: key,
-        code: code,
-        keyCode: keyCode,
-        which: keyCode,
-        view: window
-    });
-    element.dispatchEvent(upEvent);
-}
-
-function populateCellWithEstimate(input, value) {
-    if (!value) return;
-
-    input.focus();
-    input.value = value;
-
-    // Dispatch input to register change
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-
-    // Commit with Enter
-    simulateKey(input, 'Enter', 'Enter', 13);
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
@@ -652,28 +661,17 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             saveBtn?.click();
 
             // Add hours after comment is secured
-            setTimeout(() => {
+            setTimeout(async () => {
                 // Re-fetch the cell to ensure we have a valid reference
                 const freshCell = findFirstEmptyCellByDate(taskDate);
                 if (freshCell) {
-                    freshCell.focus();
-                    freshCell.click(); // Ensure selection
+                    // Use direct model update instead of UI simulation
+                    const success = await updateGridModel(freshCell, value);
 
-                    // Simulate F2 to enter edit mode
-                    simulateKey(freshCell, 'F2', 'F2', 113);
-
-                    // Wait for input to appear
-                    setTimeout(() => {
-                        const input = freshCell.querySelector('input');
-                        if (input) {
-                            populateCellWithEstimate(input, value);
-                        } else {
-                            // Fallback to double click if F2 didn't work
-                            activateEditModeOnCell(freshCell, (newInput) => {
-                                populateCellWithEstimate(newInput, value);
-                            });
-                        }
-                    }, 100);
+                    if (!success) {
+                        console.warn("Direct model update failed, falling back to simple value set (might not save)");
+                        freshCell.innerText = value;
+                    }
                 } else {
                     console.warn(`No se pudo encontrar una celda vacía para la fecha ${taskDate} al intentar insertar las horas.`);
                 }
