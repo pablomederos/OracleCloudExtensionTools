@@ -611,11 +611,9 @@ function populateCellWithEstimate(input, value) {
 }
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
-    // Just focus the cell to allow context menu to work
-    emptyCell.focus();
 
     // 1. Open comment window first
-    createCommentCommand();
+    createCommentCommand(emptyCell);
 
     setTimeout(async () => {
         // 2. Try to populate comment and wait for result

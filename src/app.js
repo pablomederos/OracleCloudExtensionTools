@@ -144,11 +144,11 @@ function clearCommands() {
     commentTriggered = false;
 }
 
-export function createCommentCommand() {
+export function createCommentCommand(cellElement) {
     if (commentTriggered) return;
     commentTriggered = true;
 
-    let focusedElement = document.activeElement;
+    let focusedElement = cellElement || document.activeElement;
     if (focusedElement.tagName != 'DIV')
         focusedElement = focusedElement.parentElement;
 
