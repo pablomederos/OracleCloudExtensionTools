@@ -29,28 +29,58 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
         }
     }
 
-    // Save feature state
-    async function saveFeatureState(feature, enabled) {
-        await chrome.storage.local.set({ [feature.storageKey]: enabled });
-
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-                chrome.tabs.reload(tabs[0].id);
+    // Save all features at once
+    async function saveAllFeatures() {
+        const updates = {};
+        for (const feature of Object.values(FEATURES)) {
+            const toggle = document.getElementById(feature.id);
+            if (toggle) {
+                updates[feature.storageKey] = toggle.checked;
             }
-        });
+        }
+        await chrome.storage.local.set(updates);
     }
+
+    function updateApplyButton() {
+        if (applyBtn) {
+            applyBtn.disabled = !pendingChanges;
+            applyBtn.textContent = pendingChanges ? 'Apply Changes' : 'No Changes';
+        }
+    }
+
+    // State tracking
+    let pendingChanges = false;
+    const applyBtn = document.getElementById('apply-btn');
 
     document.addEventListener('DOMContentLoaded', async () => {
         await loadFeatureStates();
         populateShortcuts();
+        updateApplyButton();
 
         Object.values(FEATURES).forEach(feature => {
             const toggle = document.getElementById(feature.id);
             if (toggle) {
-                toggle.addEventListener('change', (e) => {
-                    saveFeatureState(feature, e.target.checked);
+                toggle.addEventListener('change', () => {
+                    pendingChanges = true;
+                    updateApplyButton();
                 });
             }
+        });
+
+        applyBtn.addEventListener('click', async () => {
+            await saveAllFeatures();
+            pendingChanges = false;
+            updateApplyButton();
+
+            // Reload active tab
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    chrome.tabs.reload(tabs[0].id);
+                }
+            });
+
+            // Optional: Close popup after applying
+            window.close();
         });
 
         // Navigation between pages
