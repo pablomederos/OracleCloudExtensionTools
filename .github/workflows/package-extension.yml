@@ -1,0 +1,25 @@
+name: Package Extension
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create ZIP Bundle
+        run: |
+          mkdir -p dist
+          zip -r dist/oracle-cloud-tools.zip . -x "*.git*" "pipelines/*" ".github/*" "tests/*" "*.DS_Store" "node_modules/*"
+
+      - name: Upload Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oracle-cloud-tools-package
+          path: dist/oracle-cloud-tools.zip
+          retention-days: 5
