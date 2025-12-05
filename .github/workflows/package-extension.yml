@@ -23,3 +23,4 @@ jobs:
           name: oracle-cloud-tools-package
           path: dist/oracle-cloud-tools.zip
           retention-days: 5
+
