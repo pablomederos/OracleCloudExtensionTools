@@ -155,7 +155,7 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
         const btn = document.createElement('button');
         btn.textContent = '⏱️';
         btn.title = 'Add to Time Sheet';
-        btn.className = 'action-btn hidden';
+        btn.className = 'action-btn experimental-feature';
         btn.onclick = () => addToTimeSheet(id);
         actionTd.appendChild(btn);
 
@@ -291,7 +291,7 @@ function createTasksContent(container, dialog) {
         </div>
         
         <div class="footer-actions">
-            <button id="addAllBtn" class="btn-secondary hidden">Add all to Time Sheet</button>
+            <button id="addAllBtn" class="btn-secondary experimental-feature">Add all to Time Sheet</button>
         </div>
     `;
 
@@ -571,7 +571,7 @@ async function simulateTypingAndCommit(editorHost, text) {
     const nativeInput = (editorHost.tagName === 'INPUT') ? editorHost : (editorHost.querySelector ? editorHost.querySelector('input') : null);
     const target = nativeInput || editorHost;
 
-    try { if (target && typeof target.focus === 'function') target.focus(); } catch (e) {}
+    try { if (target && typeof target.focus === 'function') target.focus(); } catch (e) { }
 
     // Clear existing value
     try {
@@ -579,10 +579,10 @@ async function simulateTypingAndCommit(editorHost, text) {
             nativeInput.value = '';
             nativeInput.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
-            try { editorHost.value = ''; } catch (e) {}
-            try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: '' }, bubbles: true })); } catch (e) {}
+            try { editorHost.value = ''; } catch (e) { }
+            try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: '' }, bubbles: true })); } catch (e) { }
         }
-    } catch (e) {}
+    } catch (e) { }
 
     const canExec = typeof document.execCommand === 'function' && document.queryCommandSupported && document.queryCommandSupported('insertText');
 
@@ -595,10 +595,10 @@ async function simulateTypingAndCommit(editorHost, text) {
                 nativeInput.value += ch;
                 nativeInput.dispatchEvent(new InputEvent('input', { data: ch, inputType: 'insertText', bubbles: true }));
             } else {
-                try { editorHost.value = (editorHost.value || '') + ch; } catch (err) {}
-                try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: editorHost.value || '' }, bubbles: true })); } catch (err) {}
+                try { editorHost.value = (editorHost.value || '') + ch; } catch (err) { }
+                try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: editorHost.value || '' }, bubbles: true })); } catch (err) { }
             }
-        } catch (e) {}
+        } catch (e) { }
         await sleep(20);
     }
 
@@ -606,30 +606,30 @@ async function simulateTypingAndCommit(editorHost, text) {
     try {
         if (nativeInput) nativeInput.dispatchEvent(new Event('change', { bubbles: true }));
         else editorHost.dispatchEvent(new CustomEvent('ojValueChanged', { detail: { value: text }, bubbles: true }));
-    } catch (e) {}
+    } catch (e) { }
 
     // Try key events for Enter (commit)
     try {
         const makeKey = (k, kc) => new KeyboardEvent('keydown', { key: k, code: k, keyCode: kc, which: kc, bubbles: true, cancelable: true });
         (target).dispatchEvent(makeKey('Enter', 13));
         (target).dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-    } catch (e) {}
+    } catch (e) { }
 
     // Blur and click outside to force grid to close editor
-    try { target && target.blur && target.blur(); } catch (e) {}
+    try { target && target.blur && target.blur(); } catch (e) { }
     try {
         const dataBodyId = querySelectors.timecardDatagridDatabody[0].replace('#', '');
         const dataBody = document.getElementById(dataBodyId) || document.body;
         dataBody.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
         dataBody.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
         dataBody.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    } catch (e) {}
+    } catch (e) { }
 
     await sleep(220);
 
     // Send component-level fallback events
-    try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: text }, bubbles: true })); } catch (e) {}
-    try { editorHost.dispatchEvent(new CustomEvent('ojValueUpdated', { detail: { value: text }, bubbles: true })); } catch (e) {}
+    try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: text }, bubbles: true })); } catch (e) { }
+    try { editorHost.dispatchEvent(new CustomEvent('ojValueUpdated', { detail: { value: text }, bubbles: true })); } catch (e) { }
 
     await sleep(120);
 }
@@ -690,11 +690,11 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
                 sessionStorage.setItem('dataAlreadyInserted', '1');
             } else {
                 // Fallback: blur active, click body, press Enter, recheck
-                try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) {}
-                try { (dataBody || document.body).click(); } catch (e) {}
+                try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) { }
+                try { (dataBody || document.body).click(); } catch (e) { }
                 await new Promise(r => setTimeout(r, 200));
                 const active = document.activeElement || freshEmptyCell;
-                try { active && active.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, which: 13, bubbles: true })); } catch (e) {}
+                try { active && active.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, which: 13, bubbles: true })); } catch (e) { }
                 await new Promise(r => setTimeout(r, 200));
 
                 const recheck = Array.from((dataBody || document.body).querySelectorAll(querySelectors.datagridCell[0]));

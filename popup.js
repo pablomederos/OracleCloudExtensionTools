@@ -9,6 +9,11 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
             id: 'toggle-azure-devops',
             storageKey: 'feature_azure_devops',
             defaultValue: false
+        },
+        experimentalFeatures: {
+            id: 'toggle-experimental-features',
+            storageKey: 'feature_experimental_features',
+            defaultValue: false
         }
     };
 

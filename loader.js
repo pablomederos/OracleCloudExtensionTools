@@ -3,9 +3,10 @@
 ; (async function () {
     'use strict';
 
-    const settings = await chrome.storage.local.get('feature_azure_devops');
+    const settings = await chrome.storage.local.get(['feature_azure_devops', 'feature_experimental_features']);
     const featureFlags = {
-        azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true'
+        azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true',
+        experimentalFeatures: settings.feature_experimental_features === true || settings.feature_experimental_features === 'true'
     };
 
     const configScript = document.createElement('script');

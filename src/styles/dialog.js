@@ -166,5 +166,14 @@ export default function addStyles() {
                 border-top: 1px solid #eee;
             }
         `
+
+    if (!window.ORACLE_TOOLS_CONFIG?.experimentalFeatures) {
+        style.textContent += `
+            .experimental-feature {
+                display: none !important;
+            }
+        `
+    }
+
     document.head.appendChild(style)
 }
