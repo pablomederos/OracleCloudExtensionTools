@@ -4,6 +4,7 @@ import addStyles from './styles/dialog.js';
 import removeHeader from './utils/dom.js';
 import { showDevOpsDialog, initAzureDevOps } from './tasks/azure-devops-dialog.js';
 import { querySelectors } from './utils/selectors.js';
+import { getShortcutString } from './config/shortcuts.js';
 
 addStyles();
 removeHeader();
@@ -17,9 +18,9 @@ let altKeyCode = 0;
 let actionkeyPressedCode = 0;
 
 const commands = {
-    createComment: "true,false,true,67", // Open Comments Dialog
-    showDevOpsDialog: "true,false,false,68", // Open Azure DevOps Dialog
-    saveTimeCard: "true,false,false,83" // Save Timecard
+    createComment: getShortcutString('createComment'),
+    showDevOpsDialog: getShortcutString('showDevOpsDialog'),
+    saveTimeCard: getShortcutString('saveTimeCard')
 };
 
 const pages = {

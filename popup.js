@@ -1,4 +1,6 @@
 // Popup script - Manages feature toggles
+import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
+
 ; (function () {
     'use strict';
 
@@ -35,6 +37,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         await loadFeatureStates();
+        populateShortcuts();
 
         Object.values(FEATURES).forEach(feature => {
             const toggle = document.getElementById(feature.id);
@@ -70,4 +73,45 @@
             shortcutsPage.style.display = 'none';
         });
     });
+
+    // Populate shortcuts list dynamically from shared config
+    function populateShortcuts() {
+        const shortcutsList = document.querySelector('#shortcuts-page .shortcuts-list');
+        if (!shortcutsList) return;
+
+        // Clear existing content
+        shortcutsList.innerHTML = '';
+
+        // Generate shortcuts from config
+        Object.keys(SHORTCUTS).forEach(key => {
+            const shortcut = SHORTCUTS[key];
+            const keys = getShortcutDisplay(key);
+
+            const shortcutItem = document.createElement('div');
+            shortcutItem.className = 'shortcut-item';
+
+            const shortcutKeys = document.createElement('div');
+            shortcutKeys.className = 'shortcut-keys';
+
+            // Create kbd elements for each key
+            keys.forEach((keyName, index) => {
+                const kbd = document.createElement('kbd');
+                kbd.textContent = keyName;
+                shortcutKeys.appendChild(kbd);
+
+                // Add '+' separator between keys
+                if (index < keys.length - 1) {
+                    shortcutKeys.appendChild(document.createTextNode(' + '));
+                }
+            });
+
+            const shortcutDescription = document.createElement('div');
+            shortcutDescription.className = 'shortcut-description';
+            shortcutDescription.textContent = shortcut.label;
+
+            shortcutItem.appendChild(shortcutKeys);
+            shortcutItem.appendChild(shortcutDescription);
+            shortcutsList.appendChild(shortcutItem);
+        });
+    }
 })();

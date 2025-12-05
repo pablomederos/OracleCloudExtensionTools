@@ -24,6 +24,7 @@
         {
             "resources": [
                 "config.js",
+                "src/config/shortcuts.js",
                 "src/styles/dialog.js",
                 "src/utils/dom.js",
                 "src/utils/selectors.js",
