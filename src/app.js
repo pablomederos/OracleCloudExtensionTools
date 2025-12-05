@@ -17,9 +17,9 @@ let altKeyCode = 0;
 let actionkeyPressedCode = 0;
 
 const commands = {
-    createComment: "true,false,true,67",
-    showDevOpsDialog: "true,false,false,68",
-    saveTimeCard: "true,false,false,83"
+    createComment: "true,false,true,67", // Open Comments Dialog
+    showDevOpsDialog: "true,false,false,68", // Open Azure DevOps Dialog
+    saveTimeCard: "true,false,false,83" // Save Timecard
 };
 
 const pages = {

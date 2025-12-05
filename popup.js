@@ -44,5 +44,30 @@
                 });
             }
         });
+
+        // Navigation between pages
+        const mainPage = document.querySelector('body > .header').parentElement;
+        const shortcutsPage = document.getElementById('shortcuts-page');
+        const viewShortcutsLink = document.getElementById('view-shortcuts-link');
+        const backButton = document.getElementById('back-button');
+
+        viewShortcutsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Hide main page elements
+            document.querySelector('body > .header').style.display = 'none';
+            document.querySelector('body > .content').style.display = 'none';
+            document.querySelector('body > .footer').style.display = 'none';
+            // Show shortcuts page
+            shortcutsPage.style.display = 'block';
+        });
+
+        backButton.addEventListener('click', () => {
+            // Show main page elements
+            document.querySelector('body > .header').style.display = 'block';
+            document.querySelector('body > .content').style.display = 'block';
+            document.querySelector('body > .footer').style.display = 'block';
+            // Hide shortcuts page
+            shortcutsPage.style.display = 'none';
+        });
     });
 })();

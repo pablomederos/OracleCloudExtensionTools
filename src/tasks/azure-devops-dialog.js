@@ -543,6 +543,98 @@ function createAndAppendButton(container) {
 // Time sheet integration functions
 
 
+// Wait for an editor host (native input or JET host) to appear inside a cell
+function waitForEditorHost(cell, maxAttempts = 12, interval = 100) {
+    return new Promise((resolve) => {
+        let attempts = 0;
+        const check = () => {
+            const native = cell.querySelector('input');
+            const ojHost = cell.querySelector('oj-input-text, oj-input-number, oj-input-date, oj-text-area');
+            const contentEditable = cell.querySelector('[contenteditable="true"]');
+            const host = native || ojHost || contentEditable || null;
+            if (host) return resolve(host);
+            attempts++;
+            if (attempts >= maxAttempts) return resolve(null);
+            setTimeout(check, interval);
+        };
+        check();
+    });
+}
+
+// Simulate realistic typing and commit on the editor host (native input or JET host)
+async function simulateTypingAndCommit(editorHost, text) {
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    if (!editorHost) return;
+
+    // Determine native input if available
+    const nativeInput = (editorHost.tagName === 'INPUT') ? editorHost : (editorHost.querySelector ? editorHost.querySelector('input') : null);
+    const target = nativeInput || editorHost;
+
+    try { if (target && typeof target.focus === 'function') target.focus(); } catch (e) {}
+
+    // Clear existing value
+    try {
+        if (nativeInput) {
+            nativeInput.value = '';
+            nativeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+            try { editorHost.value = ''; } catch (e) {}
+            try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: '' }, bubbles: true })); } catch (e) {}
+        }
+    } catch (e) {}
+
+    const canExec = typeof document.execCommand === 'function' && document.queryCommandSupported && document.queryCommandSupported('insertText');
+
+    for (let ch of String(text)) {
+        try {
+            if (canExec) {
+                if (target && typeof target.focus === 'function') target.focus();
+                document.execCommand('insertText', false, ch);
+            } else if (nativeInput) {
+                nativeInput.value += ch;
+                nativeInput.dispatchEvent(new InputEvent('input', { data: ch, inputType: 'insertText', bubbles: true }));
+            } else {
+                try { editorHost.value = (editorHost.value || '') + ch; } catch (err) {}
+                try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: editorHost.value || '' }, bubbles: true })); } catch (err) {}
+            }
+        } catch (e) {}
+        await sleep(20);
+    }
+
+    // Dispatch change / component events
+    try {
+        if (nativeInput) nativeInput.dispatchEvent(new Event('change', { bubbles: true }));
+        else editorHost.dispatchEvent(new CustomEvent('ojValueChanged', { detail: { value: text }, bubbles: true }));
+    } catch (e) {}
+
+    // Try key events for Enter (commit)
+    try {
+        const makeKey = (k, kc) => new KeyboardEvent('keydown', { key: k, code: k, keyCode: kc, which: kc, bubbles: true, cancelable: true });
+        (target).dispatchEvent(makeKey('Enter', 13));
+        (target).dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    } catch (e) {}
+
+    // Blur and click outside to force grid to close editor
+    try { target && target.blur && target.blur(); } catch (e) {}
+    try {
+        const dataBodyId = querySelectors.timecardDatagridDatabody[0].replace('#', '');
+        const dataBody = document.getElementById(dataBodyId) || document.body;
+        dataBody.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        dataBody.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+        dataBody.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    } catch (e) {}
+
+    await sleep(220);
+
+    // Send component-level fallback events
+    try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: text }, bubbles: true })); } catch (e) {}
+    try { editorHost.dispatchEvent(new CustomEvent('ojValueUpdated', { detail: { value: text }, bubbles: true })); } catch (e) {}
+
+    await sleep(120);
+}
+
+
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
     createCommentCommand(emptyCell);
 
@@ -553,6 +645,68 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             const commentView = querySelectors.query(querySelectors.commentView);
             const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
             saveBtn?.click();
+
+            // After saving the comment, attempt to insert the value into the datagrid cell
+            await new Promise(r => setTimeout(r, 350));
+
+            const freshEmptyCell = findFirstEmptyCellByDate(taskDate);
+            if (!freshEmptyCell) {
+                alert("No se pudo encontrar la celda para insertar el valor.");
+                return;
+            }
+
+            // Activate the cell editor (double-click)
+            freshEmptyCell.focus();
+            freshEmptyCell.dispatchEvent(new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                detail: 2
+            }));
+
+            // Wait for editor host and perform typing+commit
+            const editorHost = await waitForEditorHost(freshEmptyCell);
+            try {
+                await simulateTypingAndCommit(editorHost || freshEmptyCell, value);
+            } catch (e) {
+                console.error('simulateTypingAndCommit error:', e);
+            }
+
+            // Verify insertion
+            await new Promise(r => setTimeout(r, 250));
+            const dataBodyId = querySelectors.timecardDatagridDatabody[0].replace('#', '');
+            const dataBody = document.getElementById(dataBodyId);
+            const stringValue = String(value).trim();
+
+            const cells = Array.from((dataBody || document.body).querySelectorAll(querySelectors.datagridCell[0]));
+            const inserted = cells.some(c => {
+                const txt = c.innerText.trim();
+                const inp = c.querySelector('input');
+                const v = inp ? String(inp.value).trim() : '';
+                return txt === stringValue || v === stringValue;
+            });
+
+            if (inserted) {
+                sessionStorage.setItem('dataAlreadyInserted', '1');
+            } else {
+                // Fallback: blur active, click body, press Enter, recheck
+                try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) {}
+                try { (dataBody || document.body).click(); } catch (e) {}
+                await new Promise(r => setTimeout(r, 200));
+                const active = document.activeElement || freshEmptyCell;
+                try { active && active.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, which: 13, bubbles: true })); } catch (e) {}
+                await new Promise(r => setTimeout(r, 200));
+
+                const recheck = Array.from((dataBody || document.body).querySelectorAll(querySelectors.datagridCell[0]));
+                const reinserted = recheck.some(c => {
+                    const txt = c.innerText.trim();
+                    const inp = c.querySelector('input');
+                    const v = inp ? String(inp.value).trim() : '';
+                    return txt === stringValue || v === stringValue;
+                });
+                if (reinserted) sessionStorage.setItem('dataAlreadyInserted', '1');
+                else console.warn('No se verificó la inserción del valor en la celda.');
+            }
         } else {
             alert("No se pudo agregar el comentario. Intente nuevamente.");
         }

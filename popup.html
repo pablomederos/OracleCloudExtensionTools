@@ -109,6 +109,52 @@
             text-align: center;
             border-top: 1px solid #eee;
         }
+
+        /* Shortcuts Page Styles */
+        .shortcuts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .shortcut-keys {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        kbd {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            padding: 4px 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .shortcut-description {
+            font-size: 13px;
+            color: #666;
+        }
+
+        #back-button:hover {
+            opacity: 0.8;
+        }
     </style>
 </head>
 
@@ -132,6 +178,45 @@
 
     <div class="footer">
         Settings are saved automatically
+        <div style="margin-top: 8px;">
+            <a href="#" id="view-shortcuts-link"
+                style="color: var(--PRIMARY-COLOR); text-decoration: none; font-weight: 500;">⌨️ View Keyboard
+                Shortcuts</a>
+        </div>
+    </div>
+
+    <!-- Shortcuts Page (hidden by default) -->
+    <div id="shortcuts-page" style="display: none;">
+        <div class="header">
+            <button id="back-button"
+                style="background: none; border: none; color: white; cursor: pointer; font-size: 18px; margin-right: 8px; padding: 0;">←</button>
+            Keyboard Shortcuts
+        </div>
+        <div class="content">
+            <div class="shortcuts-list">
+                <div class="shortcut-item">
+                    <div class="shortcut-keys">
+                        <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>C</kbd>
+                    </div>
+                    <div class="shortcut-description">Open Comments Dialog</div>
+                </div>
+                <div class="shortcut-item">
+                    <div class="shortcut-keys">
+                        <kbd>Ctrl</kbd> + <kbd>D</kbd>
+                    </div>
+                    <div class="shortcut-description">Open Azure DevOps Dialog</div>
+                </div>
+                <div class="shortcut-item">
+                    <div class="shortcut-keys">
+                        <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                    </div>
+                    <div class="shortcut-description">Save Timecard</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            All shortcuts work on the Timecards page
+        </div>
     </div>
 
     <script src="popup.js"></script>
