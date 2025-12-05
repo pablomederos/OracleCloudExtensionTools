@@ -6,6 +6,9 @@ export default function addStyles() {
             * {
                 --PRIMARY-COLOR: #cc1f20;
             }
+            .hidden {
+                display: none;
+            }
             .devops-dialog {
                 padding: 0;
                 border: none;

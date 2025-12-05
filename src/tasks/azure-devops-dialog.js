@@ -155,7 +155,7 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
         const btn = document.createElement('button');
         btn.textContent = '⏱️';
         btn.title = 'Add to Time Sheet';
-        btn.className = 'action-btn';
+        btn.className = 'action-btn hidden';
         btn.onclick = () => addToTimeSheet(id);
         actionTd.appendChild(btn);
 
@@ -291,7 +291,7 @@ function createTasksContent(container, dialog) {
         </div>
         
         <div class="footer-actions">
-            <button id="addAllBtn" class="btn-secondary">Add all to Time Sheet</button>
+            <button id="addAllBtn" class="btn-secondary hidden">Add all to Time Sheet</button>
         </div>
     `;
 

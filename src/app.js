@@ -81,7 +81,6 @@ function onKeyUp(ev) {
     clearCommands();
 }
 
-function isAlterKeyPressed() { return ctrlBtnPressed || shiftBtnPressed || altBtnPressed }
 
 function isScriptCommand() {
     const keyCombinations = [
