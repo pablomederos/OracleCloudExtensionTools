@@ -18,11 +18,11 @@ La extensión permite agilizar la carga de horas integrándose directamente con 
 Agiliza el flujo de trabajo con comandos rápidos:
 - **`Ctrl + D`**: Abre el diálogo de tareas de Azure DevOps (si la integración está habilitada).
 - **`Ctrl + Alt + C`**: Abre el cuadro de diálogo para insertar/editar comentarios en la celda activa.
-- **`Ctrl + S`**: Guarda los cambios en el timesheet.
+- **`Ctrl + S`**: Guarda los cambios en el timesheet. Si el cuadro de comentarios está abierto, guarda el comentario.
 
 ### 🛠️ Herramientas Adicionales
 - **Botón "Add from DevOps"**: Se inyecta en la barra de herramientas de Oracle Cloud para acceso rápido.
-- **Portapapeles**: Permite copiar el formato `{ID}: {Título}` al portapapeles desde la tabla de tareas.
+- **Portapapeles**: Copia el formato `{ID}: {Título}`. Si el cuadro de comentarios está abierto, pega el texto automáticamente.
 
 ## Instalación
 
@@ -69,9 +69,14 @@ Agiliza el flujo de trabajo con comandos rápidos:
 - **`loader.js`**: Script de contenido que inyecta los módulos ES6 en la página.
 - **`config.js`**: Maneja la comunicación de configuración entre la extensión y la página inyectada.
 - **`src/app.js`**: Lógica principal, manejo de atajos y coordinación de comandos.
+- **`src/config/`**:
+    - `shortcuts.js`: Definición de atajos de teclado.
+- **`src/styles/`**:
+    - `dialog.js`: Estilos CSS inyectados para los diálogos y componentes.
 - **`src/tasks/`**:
     - `azure-devops-api.js`: Manejo de llamadas a la API de Azure DevOps.
     - `azure-devops-dialog.js`: Lógica de la interfaz de usuario del diálogo de tareas.
+    - `templates/`: Plantillas HTML para la interfaz del diálogo.
 - **`src/utils/`**:
     - `selectors.js`: Centraliza los selectores CSS para elementos del DOM de Oracle y la extensión.
     - `dom.js`: Utilidades de manipulación del DOM.
