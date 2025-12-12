@@ -10,25 +10,25 @@ const FIELD_KEYS = {
     TEAM_PROJECT: 'System.TeamProject',
     CHANGED_BY: 'System.ChangedBy',
     ORIGINAL_ESTIMATE: 'Microsoft.VSTS.Scheduling.OriginalEstimate'
-};
+}
 
 export const ADO_CONFIG = {
     orgUrl: localStorage.getItem('ado_orgUrl') || '',
     project: localStorage.getItem('ado_project') || '',
     apiVersion: localStorage.getItem('ado_apiVersion') || ''
-};
+}
 
 export function getAuthHeader() {
-    const storedToken = localStorage.getItem('devops_token');
+    const storedToken = localStorage.getItem('devops_token')
     if (!storedToken)
-        alert('Azure DevOps Token not found. Please set it.');
+        alert('Azure DevOps Token not found. Please set it.')
 
-    const devopsToken = atob(storedToken).substring(1);
+    const devopsToken = atob(storedToken).substring(1)
 
     return {
         'Authorization': 'Bearer ' + devopsToken,
         'Content-Type': 'application/json'
-    };
+    }
 }
 
 export async function fetchTaskIds(startDate, endDate, username) {
@@ -40,37 +40,37 @@ export async function fetchTaskIds(startDate, endDate, username) {
     AND [${FIELD_KEYS.CHANGED_DATE}] >= '${startDate}'
     AND [${FIELD_KEYS.CHANGED_DATE}] <= '${endDate}'
     AND [${FIELD_KEYS.CHANGED_BY}] = '${username}'
-`;
+`
 
-    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/wiql?api-version=${ADO_CONFIG.apiVersion}`;
-    const authToken = getAuthHeader();
+    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/wiql?api-version=${ADO_CONFIG.apiVersion}`
+    const authToken = getAuthHeader()
 
-    if (!authToken) return;
+    if (!authToken) return
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: authToken,
             body: JSON.stringify({ query })
-        });
+        })
 
         if (!response.ok) {
-            const text = await response.text();
-            console.error('API Error Response:', text);
-            throw new Error(`WIQL Error: ${response.status} ${response.statusText}`);
+            const text = await response.text()
+            console.error('API Error Response:', text)
+            throw new Error(`WIQL Error: ${response.status} ${response.statusText}`)
         }
 
-        const data = await response.json();
-        return data.workItems.map(item => item.id);
+        const data = await response.json()
+        return data.workItems.map(item => item.id)
     } catch (error) {
-        console.error('Error fetching task IDs:', error);
-        alert('Error fetching tasks. Check console for details.');
-        return [];
+        console.error('Error fetching task IDs:', error)
+        alert('Error fetching tasks. Check console for details.')
+        return []
     }
 }
 
 export async function fetchWorkItemDetails(ids) {
-    if (!ids || ids.length === 0) return [];
+    if (!ids || ids.length === 0) return []
 
     const fields = [
         FIELD_KEYS.ID,
@@ -78,21 +78,21 @@ export async function fetchWorkItemDetails(ids) {
         FIELD_KEYS.CHANGED_DATE,
         FIELD_KEYS.STATE,
         FIELD_KEYS.ORIGINAL_ESTIMATE
-    ].join(',');
+    ].join(',')
 
-    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/workitems?ids=${ids.join(',')}&fields=${fields}&api-version=${ADO_CONFIG.apiVersion}`;
+    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/workitems?ids=${ids.join(',')}&fields=${fields}&api-version=${ADO_CONFIG.apiVersion}`
 
     try {
         const response = await fetch(url, {
             headers: getAuthHeader()
-        });
+        })
 
-        if (!response.ok) throw new Error(`Details Error: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Details Error: ${response.statusText}`)
 
-        const data = await response.json();
-        return data.value;
+        const data = await response.json()
+        return data.value
     } catch (error) {
-        console.error('Error fetching details:', error);
-        return [];
+        console.error('Error fetching details:', error)
+        return []
     }
 }
