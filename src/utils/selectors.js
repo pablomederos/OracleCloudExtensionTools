@@ -1,26 +1,26 @@
 export const querySelectors = {
     commentOption: ['#insertComment', '#editComment'],
     saveBtn: ['button[aria-label=Save]'],
-    commentView: ['.oj-sp-create-edit-drawer-template-main-container'],
+    commentView: ['oj-sp-create-edit-drawer-template-main-container'],
     commentTextarea: ['textarea'],
-    banner: ['div:has(>table[role=presentation])', '.oj-sp-banner-container.oj-sp-banner-layout.oj-private-scale-lg.oj-sp-common-banner-content-layout'],
+    banner: ['div:has(>table[role=presentation])', 'oj-sp-banner-container.oj-sp-banner-layout.oj-private-scale-lg.oj-sp-common-banner-content-layout'],
 
     timecardDatagrid: ['#timecard-datagrid'],
     timecardDatagridColumnHeader: ['#timecard-datagrid:columnHeader'],
     timecardDatagridDatabody: ['#timecard-datagrid:databody'],
-    datagridHeaderCell: ['.oj-datagrid-header-cell'],
-    datagridCell: ['.oj-datagrid-cell'],
+    datagridHeaderCell: ['oj-datagrid-header-cell'],
+    datagridCell: ['oj-datagrid-cell'],
 
-    devopsDialog: ['.devops-dialog'],
-    devopsBtn: ['.devops-btn'],
-    closeBtn: ['.close-btn'],
-    tabBtn: ['.tab-btn'],
-    settingsTabBtn: ['.tab-btn:nth-child(2)'],
+    devopsDialog: ['devops-dialog'],
+    devopsBtn: ['devops-btn'],
+    closeBtn: ['close-btn'],
+    tabBtn: ['tab-btn'],
+    settingsTabBtn: ['tab-btn:nth-child(2)'],
     tasksTab: ['[data-tab="tasks"]'],
     settingsTab: ['[data-tab="settings"]'],
     tasksContent: ['[data-content="tasks"]'],
     settingsContent: ['[data-content="settings"]'],
-    tasksTableHeader: ['.tasks-table th'],
+    tasksTableHeader: ['tasks-table th'],
     sortableTableHeader: ['th[data-column]'],
 
     tasksBody: ['#tasksBody'],
@@ -40,7 +40,7 @@ export const querySelectors = {
     input: ['input'],
     ojInputComponents: ['oj-input-text, oj-input-number, oj-input-date, oj-text-area'],
     contentEditable: ['[contenteditable="true"]'],
-    templateBtn: ['.comment-templates-btn'],
+    templateBtn: ['BaseButtonStyles_styles_base__jvi3ds', 'BaseButtonStyles_styles_sizes_sm__jvi3ds2', 'BaseButtonStyles_styles_variants_outlined_base__jvi3ds', 'BaseButtonStyles_styles_styled__jvi3ds', 'BaseButtonStyles_styles_styledOutline__jvi3ds', 'BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3ds'],
 
     // Helper function
     query: (selectorList) => {
