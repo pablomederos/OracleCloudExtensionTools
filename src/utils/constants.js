@@ -11,7 +11,10 @@ export const STORAGE_KEYS = {
         ORG_URL: 'ado_orgUrl',
         PROJECT: 'ado_project',
         API_VERSION: 'ado_apiVersion',
-        TEMPLATES: 'comment_templates'
+        TEMPLATES: 'comment_templates',
+        FILTER_START_DATE: 'ado_filter_start_date',
+        FILTER_END_DATE: 'ado_filter_end_date',
+        FILTER_ENABLED: 'ado_filter_enabled'
     }
 };
 

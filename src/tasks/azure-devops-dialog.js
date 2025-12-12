@@ -88,6 +88,8 @@ const createTasksContent = async (container, dialog) => {
     const searchBtn = querySelectors.queryFrom(container, querySelectors.searchBtn)
     const addAllButton = querySelectors.queryFrom(container, querySelectors.addAllBtn)
 
+    const filterSwitch = container.querySelector('#filterDateSwitch')
+
     container.querySelectorAll(querySelectors.sortableTableHeader[0]).forEach(th => {
         th.onclick = () => {
             const column = th.dataset.column
@@ -99,6 +101,32 @@ const createTasksContent = async (container, dialog) => {
             }
         }
     })
+
+    const updateFilterStorage = () => {
+        if (filterSwitch.checked) {
+            localStorage.setItem(STORAGE_KEYS.LOCAL.FILTER_ENABLED, 'true')
+            localStorage.setItem(STORAGE_KEYS.LOCAL.FILTER_START_DATE, startDateInput.value)
+            localStorage.setItem(STORAGE_KEYS.LOCAL.FILTER_END_DATE, endDateInput.value)
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.LOCAL.FILTER_ENABLED)
+            localStorage.removeItem(STORAGE_KEYS.LOCAL.FILTER_START_DATE)
+            localStorage.removeItem(STORAGE_KEYS.LOCAL.FILTER_END_DATE)
+            // Clear cache as requested
+            sessionStorage.removeItem(STORAGE_KEYS.SESSION.TASKS_CACHE)
+        }
+    }
+
+    filterSwitch.onchange = () => {
+        updateFilterStorage()
+    }
+
+    startDateInput.onchange = () => {
+        if (filterSwitch.checked) updateFilterStorage()
+    }
+
+    endDateInput.onchange = () => {
+        if (filterSwitch.checked) updateFilterStorage()
+    }
 
     searchBtn.onclick = async () => {
         const start = startDateInput.value
@@ -245,13 +273,25 @@ const loadInitialData = async (dialog) => {
     const usernameInput = querySelectors.queryFrom(dialog, querySelectors.username)
     const searchBtn = querySelectors.queryFrom(dialog, querySelectors.searchBtn)
 
-    if (!startDateInput.value || !endDateInput.value) {
-        const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
+    const filterSwitch = dialog.querySelector('#filterDateSwitch')
+    const filterEnabled = localStorage.getItem(STORAGE_KEYS.LOCAL.FILTER_ENABLED) === 'true'
 
-        startDateInput.value = yesterday.toISOString().split('T')[0]
-        endDateInput.value = today.toISOString().split('T')[0]
+    if (filterEnabled) {
+        filterSwitch.checked = true
+        const savedStart = localStorage.getItem(STORAGE_KEYS.LOCAL.FILTER_START_DATE)
+        const savedEnd = localStorage.getItem(STORAGE_KEYS.LOCAL.FILTER_END_DATE)
+        if (savedStart) startDateInput.value = savedStart
+        if (savedEnd) endDateInput.value = savedEnd
+    } else {
+        filterSwitch.checked = false
+        if (!startDateInput.value || !endDateInput.value) {
+            const today = new Date()
+            const yesterday = new Date(today)
+            yesterday.setDate(yesterday.getDate() - 1)
+
+            startDateInput.value = yesterday.toISOString().split('T')[0]
+            endDateInput.value = today.toISOString().split('T')[0]
+        }
     }
 
     const storedUsername = localStorage.getItem(STORAGE_KEYS.LOCAL.USERNAME)

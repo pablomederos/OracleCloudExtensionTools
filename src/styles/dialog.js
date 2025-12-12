@@ -177,6 +177,49 @@ export default function addStyles() {
                 background-color: var(--PRIMARY-COLOR);
                 color: white;
             }
+
+            /* Toggle Switch */
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 40px;
+                height: 20px;
+                margin-left: 10px;
+                vertical-align: middle;
+            }
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .3s;
+                border-radius: 20px;
+            }
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 2px;
+                bottom: 2px;
+                background-color: white;
+                transition: .3s;
+                border-radius: 50%;
+            }
+            input:checked + .slider {
+                background-color: var(--PRIMARY-COLOR);
+            }
+            input:checked + .slider:before {
+                transform: translateX(20px);
+            }
         `
 
     if (!window.ORACLE_TOOLS_CONFIG?.experimentalFeatures) {
