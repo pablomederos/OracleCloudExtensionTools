@@ -182,8 +182,15 @@ function openInsertCommentWindow() {
 }
 
 function saveTimecard() {
-    const saveBtn = querySelectors.query(querySelectors.saveBtn);
-    if (saveBtn) saveBtn.click();
+    const commentView = querySelectors.query(querySelectors.commentView);
+
+    if (commentView) {
+        const commentSaveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
+        if (commentSaveBtn) commentSaveBtn.click();
+    } else {
+        const saveBtn = querySelectors.query(querySelectors.saveBtn);
+        if (saveBtn) saveBtn.click();
+    }
 }
 
 export function populateCommentTextarea(taskId, taskTitle) {
