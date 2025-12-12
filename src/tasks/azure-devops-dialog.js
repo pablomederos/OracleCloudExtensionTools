@@ -1,15 +1,434 @@
-// DevOps Dialog Module
-// Handles all UI creation and management for the DevOps dialog
-
 import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './azure-devops-api.js';
 import { createCommentCommand, populateCommentTextarea } from '../app.js';
 import { querySelectors } from '../utils/selectors.js';
+import { getDialogStructure, 
+    getTasksTabTemplate, 
+    getSettingsTabTemplate, 
+    fillTemplate 
+} from './templates/index.js';
 
-// Sort state
+const STORAGE_KEYS = {
+    SESSION: {
+        TASKS_CACHE: 'devops_tasks_cache',
+        COMPLETE_JSON: 'devOpsCompleteJSON',
+        DATA_INSERTED: 'dataAlreadyInserted',
+        ROW_JSON: 'devOpsRowJSON'
+    },
+    LOCAL: {
+        USERNAME: 'devops_username',
+        TOKEN: 'devops_token',
+        ORG_URL: 'ado_orgUrl',
+        PROJECT: 'ado_project',
+        API_VERSION: 'ado_apiVersion'
+    }
+};
+
+const MESSAGES = {
+    SELECT_DATES: 'Please select both start and end dates',
+    ENTER_USERNAME: 'Please enter a username',
+    NO_TASKS_FOUND: 'No tasks found for the selected range.',
+    ERROR_FETCHING: 'Error fetching tasks',
+    ALL_TASKS_SAVED: 'All tasks saved to sessionStorage (devOpsCompleteJSON)!',
+    NO_TASKS_TO_ADD: 'No tasks to add.',
+    SETTINGS_SAVED: 'Settings saved!',
+    FILL_REQUIRED: 'Please fill all required fields',
+    TASK_NOT_FOUND: 'Task not found in cache.',
+    CELL_NOT_FOUND: 'No se pudo encontrar la celda para insertar el valor.',
+    COMMENT_FAILED: 'No se pudo agregar el comentario. Intente nuevamente.'
+};
+
+const UI_TEXT = {
+    SEARCHING: 'Searching...',
+    SEARCH: 'Search',
+    DATA_INSERTED_TRUE: '1',
+    DATA_INSERTED_FALSE: '0'
+};
+
+const BUTTON_CLASSES = [
+    'BaseButtonStyles_styles_base__jvi3ds0',
+    'devops-btn',
+    'BaseButtonStyles_styles_sizes_sm__jvi3ds2d',
+    'BaseButtonStyles_styles_variants_outlined_base__jvi3dso',
+    'BaseButtonStyles_styles_styled__jvi3ds1',
+    'BaseButtonStyles_styles_styledOutline__jvi3ds2',
+    'BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3dsv'
+];
+
+const BUTTON_CONFIG = {
+    TEXT: 'Add from DevOps',
+    BORDER_RADIUS: '5px',
+    FONT_WEIGHT: '600'
+};
+
+const FIELD_KEYS = {
+    ID: 'System.Id',
+    TITLE: 'System.Title',
+    CHANGED_DATE: 'System.ChangedDate',
+    STATE: 'System.State',
+    ORIGINAL_ESTIMATE: 'Microsoft.VSTS.Scheduling.OriginalEstimate'
+};
+
 let sortState = {
     column: 'date',
     ascending: false
 };
+
+export async function createDevopsDialog() {
+    const dialog = document.createElement('dialog');
+    dialog.classList.add('devops-dialog');
+
+    dialog.innerHTML = await getDialogStructure();
+
+    const closeBtn = querySelectors.queryFrom(dialog, querySelectors.closeBtn);
+    const tasksTabBtn = querySelectors.queryFrom(dialog, querySelectors.tasksTab);
+    const settingsTabBtn = querySelectors.queryFrom(dialog, querySelectors.settingsTab);
+    const tasksContent = querySelectors.queryFrom(dialog, querySelectors.tasksContent);
+    const settingsContent = querySelectors.queryFrom(dialog, querySelectors.settingsContent);
+
+    closeBtn.onclick = () => dialog.close();
+
+    await createTasksContent(tasksContent, dialog);
+    await createSettingsContent(settingsContent, dialog);
+
+    tasksTabBtn.onclick = () => {
+        tasksTabBtn.classList.add('active');
+        tasksTabBtn.style.borderBottom = '2px solid #0078d4';
+        tasksTabBtn.style.fontWeight = 'bold';
+
+        settingsTabBtn.classList.remove('active');
+        settingsTabBtn.style.borderBottom = 'none';
+        settingsTabBtn.style.fontWeight = 'normal';
+
+        tasksContent.style.display = 'block';
+        settingsContent.style.display = 'none';
+    };
+
+    settingsTabBtn.onclick = () => {
+        settingsTabBtn.classList.add('active');
+        settingsTabBtn.style.borderBottom = '2px solid #0078d4';
+        settingsTabBtn.style.fontWeight = 'bold';
+
+        tasksTabBtn.classList.remove('active');
+        tasksTabBtn.style.borderBottom = 'none';
+        tasksTabBtn.style.fontWeight = 'normal';
+
+        settingsContent.style.display = 'block';
+        tasksContent.style.display = 'none';
+    };
+
+    return dialog;
+}
+
+export async function showDevOpsDialog() {
+    let dialog = querySelectors.query(querySelectors.devopsDialog);
+    if (!dialog) {
+        dialog = await createDevopsDialog();
+        document.body.appendChild(dialog);
+    }
+    dialog.showModal();
+    loadInitialData(dialog);
+}
+
+async function createTasksContent(container, dialog) {
+    container.innerHTML = await getTasksTabTemplate();
+
+    const startDateInput = querySelectors.queryFrom(container, querySelectors.startDate);
+    const endDateInput = querySelectors.queryFrom(container, querySelectors.endDate);
+    const searchBtn = querySelectors.queryFrom(container, querySelectors.searchBtn);
+    const addAllButton = querySelectors.queryFrom(container, querySelectors.addAllBtn);
+
+    container.querySelectorAll(querySelectors.sortableTableHeader[0]).forEach(th => {
+        th.onclick = () => {
+            const column = th.dataset.column;
+            const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE);
+            if (cachedData) {
+                const workItems = JSON.parse(cachedData);
+                const ascending = sortState.column === column ? !sortState.ascending : true;
+                renderTable(workItems, column, ascending);
+            }
+        };
+    });
+
+    searchBtn.onclick = async () => {
+        const start = startDateInput.value;
+        const end = endDateInput.value;
+        const username = localStorage.getItem(STORAGE_KEYS.LOCAL.USERNAME);
+
+        if (!start || !end) {
+            alert(MESSAGES.SELECT_DATES);
+            return;
+        }
+        if (!username) {
+            alert(MESSAGES.ENTER_USERNAME);
+            return;
+        }
+
+        searchBtn.textContent = UI_TEXT.SEARCHING;
+        searchBtn.disabled = true;
+
+        try {
+            const ids = await fetchTaskIds(start, end, username);
+
+            if (ids?.length) {
+                const details = await fetchWorkItemDetails(ids);
+                sessionStorage.setItem(STORAGE_KEYS.SESSION.TASKS_CACHE, JSON.stringify(details));
+                renderTable(details);
+            } else {
+                renderTable([]);
+                alert(MESSAGES.NO_TASKS_FOUND);
+            }
+        } catch (error) {
+            console.error(error);
+            alert(MESSAGES.ERROR_FETCHING);
+        } finally {
+            searchBtn.textContent = UI_TEXT.SEARCH;
+            searchBtn.disabled = false;
+        }
+    };
+
+    addAllButton.onclick = () => {
+        const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE);
+        if (cachedData) {
+            sessionStorage.setItem(STORAGE_KEYS.SESSION.COMPLETE_JSON, cachedData);
+            alert(MESSAGES.ALL_TASKS_SAVED);
+
+            if (dialog) dialog.close();
+
+            startCompletionCheck();
+        } else {
+            alert(MESSAGES.NO_TASKS_TO_ADD);
+        }
+    };
+}
+
+async function createSettingsContent(container, dialog) {
+    const template = await getSettingsTabTemplate();
+    container.innerHTML = fillTemplate(template, {
+        orgUrl: ADO_CONFIG.orgUrl,
+        project: ADO_CONFIG.project,
+        apiVersion: ADO_CONFIG.apiVersion,
+        username: localStorage.getItem(STORAGE_KEYS.LOCAL.USERNAME) || ''
+    });
+
+    const usernameInput = querySelectors.queryFrom(container, querySelectors.username);
+    const tokenInput = querySelectors.queryFrom(container, querySelectors.adoToken);
+    const saveSettingsBtn = querySelectors.queryFrom(container, querySelectors.saveSettingsBtn);
+
+    usernameInput.oninput = () => {
+        localStorage.setItem(STORAGE_KEYS.LOCAL.USERNAME, usernameInput.value);
+        updateSearchButtonState(dialog);
+    };
+
+    saveSettingsBtn.onclick = () => {
+        const newOrgUrl = querySelectors.queryFrom(container, querySelectors.adoOrgUrl).value.trim();
+        const newProject = querySelectors.queryFrom(container, querySelectors.adoProject).value.trim();
+        const newApiVersion = querySelectors.queryFrom(container, querySelectors.adoApiVersion).value.trim();
+        const newToken = tokenInput.value.trim();
+
+        if (newOrgUrl && newProject && newApiVersion) {
+            localStorage.setItem(STORAGE_KEYS.LOCAL.ORG_URL, newOrgUrl);
+            localStorage.setItem(STORAGE_KEYS.LOCAL.PROJECT, newProject);
+            localStorage.setItem(STORAGE_KEYS.LOCAL.API_VERSION, newApiVersion);
+
+            ADO_CONFIG.orgUrl = newOrgUrl;
+            ADO_CONFIG.project = newProject;
+            ADO_CONFIG.apiVersion = newApiVersion;
+
+            if (newToken) {
+                const encoded = btoa(':' + newToken);
+                localStorage.setItem(STORAGE_KEYS.LOCAL.TOKEN, encoded);
+                tokenInput.value = '';
+            }
+
+            alert(MESSAGES.SETTINGS_SAVED);
+            updateSearchButtonState(dialog);
+        } else {
+            alert(MESSAGES.FILL_REQUIRED);
+        }
+    };
+}
+
+function updateSortIndicators() {
+    const headers = document.querySelectorAll(querySelectors.tasksTableHeader[0]);
+    const columnMap = ['id', 'title', 'date', 'status', 'estimate', null];
+
+    headers.forEach((th, index) => {
+        const column = columnMap[index];
+        if (!column) return;
+
+        th.textContent = th.textContent.replace(/ [↑↓]/g, '');
+
+        if (column === sortState.column) {
+            th.textContent += sortState.ascending ? ' ↑' : ' ↓';
+        }
+    });
+}
+
+function updateSearchButtonState(dialog) {
+    const searchBtn = querySelectors.queryFrom(dialog, querySelectors.searchBtn);
+    const usernameInput = querySelectors.queryFrom(dialog, querySelectors.username);
+    const hasToken = !!localStorage.getItem(STORAGE_KEYS.LOCAL.TOKEN);
+    const hasUsername = !!usernameInput.value.trim();
+    const hasOrg = !!ADO_CONFIG.orgUrl;
+    const hasProject = !!ADO_CONFIG.project;
+    const hasApi = !!ADO_CONFIG.apiVersion;
+
+    searchBtn.disabled = !(hasToken && hasUsername && hasOrg && hasProject && hasApi);
+
+    if (searchBtn.disabled) {
+        const missing = [];
+        if (!hasToken) missing.push('Token');
+        if (!hasUsername) missing.push('Username');
+        if (!hasOrg) missing.push('Org URL');
+        if (!hasProject) missing.push('Project');
+        if (!hasApi) missing.push('API Version');
+        searchBtn.title = `Missing: ${missing.join(', ')}`;
+    } else {
+        searchBtn.title = '';
+    }
+}
+
+async function loadInitialData(dialog) {
+    const startDateInput = querySelectors.queryFrom(dialog, querySelectors.startDate);
+    const endDateInput = querySelectors.queryFrom(dialog, querySelectors.endDate);
+    const usernameInput = querySelectors.queryFrom(dialog, querySelectors.username);
+    const searchBtn = querySelectors.queryFrom(dialog, querySelectors.searchBtn);
+
+    if (!startDateInput.value || !endDateInput.value) {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        startDateInput.value = yesterday.toISOString().split('T')[0];
+        endDateInput.value = today.toISOString().split('T')[0];
+    }
+
+    const storedUsername = localStorage.getItem(STORAGE_KEYS.LOCAL.USERNAME);
+    if (storedUsername) {
+        usernameInput.value = storedUsername;
+    }
+
+    updateSearchButtonState(dialog);
+
+    const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE);
+    if (cachedData) {
+        renderTable(JSON.parse(cachedData));
+    } else {
+        if (!searchBtn.disabled) searchBtn.click();
+        else {
+            const hasToken = !!localStorage.getItem(STORAGE_KEYS.LOCAL.TOKEN);
+            const hasOrg = !!ADO_CONFIG.orgUrl;
+            const hasProject = !!ADO_CONFIG.project;
+            const hasApi = !!ADO_CONFIG.apiVersion;
+
+            if (!hasToken || !hasOrg || !hasProject || !hasApi) {
+                const settingsTabBtn = querySelectors.queryFrom(dialog, querySelectors.settingsTabBtn);
+                if (settingsTabBtn) settingsTabBtn.click();
+            }
+        }
+    }
+}
+
+function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
+    const tbody = document.getElementById(querySelectors.tasksBody[0].replace('#', ''));
+    tbody.innerHTML = '';
+
+    sortState.column = sortColumn;
+    sortState.ascending = ascending;
+
+    updateSortIndicators();
+
+    let lastDate = null;
+    let useGray = false;
+
+    const sortedItems = [...workItems].sort((a, b) => {
+        let valA, valB;
+
+        switch (sortColumn) {
+            case 'id':
+                valA = a.fields[FIELD_KEYS.ID];
+                valB = b.fields[FIELD_KEYS.ID];
+                break;
+            case 'title':
+                valA = a.fields[FIELD_KEYS.TITLE].toLowerCase();
+                valB = b.fields[FIELD_KEYS.TITLE].toLowerCase();
+                break;
+            case 'date':
+                valA = new Date(a.fields[FIELD_KEYS.CHANGED_DATE]);
+                valB = new Date(b.fields[FIELD_KEYS.CHANGED_DATE]);
+                break;
+            case 'status':
+                valA = a.fields[FIELD_KEYS.STATE].toLowerCase();
+                valB = b.fields[FIELD_KEYS.STATE].toLowerCase();
+                break;
+            case 'estimate':
+                valA = a.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || 0;
+                valB = b.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || 0;
+                break;
+            default:
+                valA = new Date(a.fields[FIELD_KEYS.CHANGED_DATE]);
+                valB = new Date(a.fields[FIELD_KEYS.CHANGED_DATE]);
+        }
+
+        if (valA < valB) return ascending ? -1 : 1;
+        if (valA > valB) return ascending ? 1 : -1;
+        return 0;
+    });
+
+    sortedItems.forEach(item => {
+        const tr = document.createElement('tr');
+
+        const fields = item.fields;
+        const id = fields[FIELD_KEYS.ID];
+        const title = fields[FIELD_KEYS.TITLE];
+        const date = new Date(fields[FIELD_KEYS.CHANGED_DATE]).toLocaleDateString();
+        const status = fields[FIELD_KEYS.STATE];
+        const estimate = fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || '-';
+
+        if (date !== lastDate) {
+            useGray = !useGray;
+            lastDate = date;
+        }
+
+        if (useGray) {
+            tr.classList.add('task-row-alt');
+        }
+
+        const cells = [id, title, date, status, estimate];
+        cells.forEach(text => {
+            const td = document.createElement('td');
+            td.textContent = text;
+            tr.appendChild(td);
+        });
+
+        const actionTd = document.createElement('td');
+
+        const btn = document.createElement('button');
+        btn.textContent = '⏱️';
+        btn.title = 'Add to Time Sheet';
+        btn.className = 'action-btn experimental-feature';
+        btn.onclick = () => addToTimeSheet(id);
+        actionTd.appendChild(btn);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = '📋';
+        copyBtn.title = 'Copy to Clipboard';
+        copyBtn.className = 'action-btn';
+        copyBtn.style.marginLeft = '5px';
+        copyBtn.onclick = () => {
+            const text = `${id}: ${title.replace(':', ' ')}`;
+            navigator.clipboard.writeText(text).then(() => {
+                const dialog = querySelectors.query(querySelectors.devopsDialog);
+                if (dialog) dialog.close();
+            });
+        };
+        actionTd.appendChild(copyBtn);
+
+        tr.appendChild(actionTd);
+
+        tbody.appendChild(tr);
+    });
+}
 
 function findFirstEmptyCellByDate(isoDateString) {
     const dateObj = new Date(isoDateString);
@@ -64,7 +483,7 @@ function findFirstEmptyCellByDate(isoDateString) {
 
     for (let cell of columnCells) {
         const textContent = cell.innerText.trim();
-        const inputElement = cell.querySelector('input');
+        const inputElement = querySelectors.queryFrom(cell, querySelectors.input);
         const inputValue = inputElement ? inputElement.value : "";
 
         const isEmpty = (textContent === "" && inputValue === "");
@@ -77,480 +496,13 @@ function findFirstEmptyCellByDate(isoDateString) {
     return null;
 }
 
-
-function renderTable(workItems, sortColumn = sortState.column, ascending = sortState.ascending) {
-    const tbody = document.getElementById(querySelectors.tasksBody[0].replace('#', ''));
-    tbody.innerHTML = '';
-
-    sortState.column = sortColumn;
-    sortState.ascending = ascending;
-
-    updateSortIndicators();
-
-    let lastDate = null;
-    let useGray = false;
-
-    const sortedItems = [...workItems].sort((a, b) => {
-        let valA, valB;
-
-        switch (sortColumn) {
-            case 'id':
-                valA = a.fields['System.Id'];
-                valB = b.fields['System.Id'];
-                break;
-            case 'title':
-                valA = a.fields['System.Title'].toLowerCase();
-                valB = b.fields['System.Title'].toLowerCase();
-                break;
-            case 'date':
-                valA = new Date(a.fields['System.ChangedDate']);
-                valB = new Date(b.fields['System.ChangedDate']);
-                break;
-            case 'status':
-                valA = a.fields['System.State'].toLowerCase();
-                valB = b.fields['System.State'].toLowerCase();
-                break;
-            case 'estimate':
-                valA = a.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || 0;
-                valB = b.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || 0;
-                break;
-            default:
-                valA = new Date(a.fields['System.ChangedDate']);
-                valB = new Date(b.fields['System.ChangedDate']);
-        }
-
-        if (valA < valB) return ascending ? -1 : 1;
-        if (valA > valB) return ascending ? 1 : -1;
-        return 0;
-    });
-
-    sortedItems.forEach(item => {
-        const tr = document.createElement('tr');
-
-        const fields = item.fields;
-        const id = fields['System.Id'];
-        const title = fields['System.Title'];
-        const date = new Date(fields['System.ChangedDate']).toLocaleDateString();
-        const status = fields['System.State'];
-        const estimate = fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '-';
-
-        if (date !== lastDate) {
-            useGray = !useGray;
-            lastDate = date;
-        }
-
-        if (useGray) {
-            tr.classList.add('task-row-alt');
-        }
-
-        const cells = [id, title, date, status, estimate];
-        cells.forEach(text => {
-            const td = document.createElement('td');
-            td.textContent = text;
-            tr.appendChild(td);
-        });
-
-        const actionTd = document.createElement('td');
-
-        const btn = document.createElement('button');
-        btn.textContent = '⏱️';
-        btn.title = 'Add to Time Sheet';
-        btn.className = 'action-btn experimental-feature';
-        btn.onclick = () => addToTimeSheet(id);
-        actionTd.appendChild(btn);
-
-        const copyBtn = document.createElement('button');
-        copyBtn.textContent = '📋';
-        copyBtn.title = 'Copy to Clipboard';
-        copyBtn.className = 'action-btn';
-        copyBtn.style.marginLeft = '5px';
-        copyBtn.onclick = () => {
-            const text = `${id}: ${title.replace(':', ' ')}`;
-            navigator.clipboard.writeText(text).then(() => {
-                const dialog = querySelectors.query(querySelectors.devopsDialog);
-                if (dialog) dialog.close();
-            });
-        };
-        actionTd.appendChild(copyBtn);
-
-        tr.appendChild(actionTd);
-
-        tbody.appendChild(tr);
-    });
-}
-
-function updateSearchButtonState(dialog) {
-    const searchBtn = dialog.querySelector('#searchBtn');
-    const usernameInput = dialog.querySelector('#username');
-    const hasToken = !!localStorage.getItem('devops_token');
-    const hasUsername = !!usernameInput.value.trim();
-    const hasOrg = !!ADO_CONFIG.orgUrl;
-    const hasProject = !!ADO_CONFIG.project;
-    const hasApi = !!ADO_CONFIG.apiVersion;
-
-    searchBtn.disabled = !(hasToken && hasUsername && hasOrg && hasProject && hasApi);
-
-    if (searchBtn.disabled) {
-        const missing = [];
-        if (!hasToken) missing.push('Token');
-        if (!hasUsername) missing.push('Username');
-        if (!hasOrg) missing.push('Org URL');
-        if (!hasProject) missing.push('Project');
-        if (!hasApi) missing.push('API Version');
-        searchBtn.title = `Missing: ${missing.join(', ')}`;
-    } else {
-        searchBtn.title = '';
-    }
-}
-
-async function loadInitialData(dialog) {
-    const startDateInput = dialog.querySelector('#startDate');
-    const endDateInput = dialog.querySelector('#endDate');
-    const usernameInput = dialog.querySelector('#username');
-    const searchBtn = dialog.querySelector('#searchBtn');
-
-    if (!startDateInput.value || !endDateInput.value) {
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        startDateInput.value = yesterday.toISOString().split('T')[0];
-        endDateInput.value = today.toISOString().split('T')[0];
-    }
-
-    const storedUsername = localStorage.getItem('devops_username');
-    if (storedUsername) {
-        usernameInput.value = storedUsername;
-    }
-
-    updateSearchButtonState(dialog);
-
-    const cachedData = sessionStorage.getItem('devops_tasks_cache');
-    if (cachedData) {
-        renderTable(JSON.parse(cachedData));
-    } else {
-        if (!searchBtn.disabled) searchBtn.click();
-        else {
-            const hasToken = !!localStorage.getItem('devops_token');
-            const hasOrg = !!ADO_CONFIG.orgUrl;
-            const hasProject = !!ADO_CONFIG.project;
-            const hasApi = !!ADO_CONFIG.apiVersion;
-
-            if (!hasToken || !hasOrg || !hasProject || !hasApi) {
-                const settingsTabBtn = dialog.querySelector('.tab-btn:nth-child(2)');
-                if (settingsTabBtn) settingsTabBtn.click();
-            }
-        }
-    }
-}
-
-function updateSortIndicators() {
-    const headers = document.querySelectorAll(querySelectors.tasksTableHeader[0]);
-    const columnMap = ['id', 'title', 'date', 'status', 'estimate', null];
-
-    headers.forEach((th, index) => {
-        const column = columnMap[index];
-        if (!column) return;
-
-        th.textContent = th.textContent.replace(/ [↑↓]/g, '');
-
-        if (column === sortState.column) {
-            th.textContent += sortState.ascending ? ' ↑' : ' ↓';
-        }
-    });
-}
-
-function createTasksContent(container, dialog) {
-    container.innerHTML = `
-        <div class="controls">
-            <div class="control-group">
-                <label for="startDate">Start Date</label>
-                <input type="date" id="startDate">
-            </div>
-            <div class="control-group">
-                <label for="endDate">End Date</label>
-                <input type="date" id="endDate">
-            </div>
-            <button id="searchBtn" class="btn-primary" style="align-self: end;" disabled>Search</button>
-        </div>
-        
-        <div class="tasks-table-container">
-            <table class="tasks-table">
-                <thead>
-                    <tr>
-                        <th data-column="id" style="cursor: pointer; user-select: none;" title="Click to sort">Task ID</th>
-                        <th data-column="title" style="cursor: pointer; user-select: none;" title="Click to sort">Title</th>
-                        <th data-column="date" style="cursor: pointer; user-select: none;" title="Click to sort">Changed Date</th>
-                        <th data-column="status" style="cursor: pointer; user-select: none;" title="Click to sort">Status</th>
-                        <th data-column="estimate" style="cursor: pointer; user-select: none;" title="Click to sort">Original Estimate</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tasksBody"></tbody>
-            </table>
-        </div>
-        
-        <div class="footer-actions">
-            <button id="addAllBtn" class="btn-secondary experimental-feature">Add all to Time Sheet</button>
-        </div>
-    `;
-
-    const startDateInput = container.querySelector('#startDate');
-    const endDateInput = container.querySelector('#endDate');
-    const searchBtn = container.querySelector('#searchBtn');
-    const addAllButton = container.querySelector('#addAllBtn');
-
-    container.querySelectorAll(querySelectors.sortableTableHeader[0]).forEach(th => {
-        th.onclick = () => {
-            const column = th.dataset.column;
-            const cachedData = sessionStorage.getItem('devops_tasks_cache');
-            if (cachedData) {
-                const workItems = JSON.parse(cachedData);
-                const ascending = sortState.column === column ? !sortState.ascending : true;
-                renderTable(workItems, column, ascending);
-            }
-        };
-    });
-
-    searchBtn.onclick = async () => {
-        const start = startDateInput.value;
-        const end = endDateInput.value;
-        const username = localStorage.getItem('devops_username');
-
-        if (!start || !end) {
-            alert('Please select both start and end dates');
-            return;
-        }
-        if (!username) {
-            alert('Please enter a username');
-            return;
-        }
-
-        searchBtn.textContent = 'Searching...';
-        searchBtn.disabled = true;
-
-        try {
-            const ids = await fetchTaskIds(start, end, username);
-
-            if (ids?.length) {
-                const details = await fetchWorkItemDetails(ids);
-                sessionStorage.setItem('devops_tasks_cache', JSON.stringify(details));
-                renderTable(details);
-            } else {
-                renderTable([]);
-                alert('No tasks found for the selected range.');
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Error fetching tasks');
-        } finally {
-            searchBtn.textContent = 'Search';
-            searchBtn.disabled = false;
-        }
-    };
-
-    addAllButton.onclick = () => {
-        const cachedData = sessionStorage.getItem('devops_tasks_cache');
-        if (cachedData) {
-            sessionStorage.setItem('devOpsCompleteJSON', cachedData);
-            alert('All tasks saved to sessionStorage (devOpsCompleteJSON)!');
-
-            if (dialog) dialog.close();
-
-            startCompletionCheck();
-        } else {
-            alert('No tasks to add.');
-        }
-    };
-}
-
-function createSettingsContent(container, dialog) {
-    container.innerHTML = `
-        <div style="padding: 15px;">
-            <div class="control-group">
-                <label for="adoOrgUrl">Org URL</label>
-                <input type="text" id="adoOrgUrl" value="${ADO_CONFIG.orgUrl}" placeholder="e.g. https://dev.azure.com/yourorg">
-            </div>
-            <div class="control-group">
-                <label for="adoProject">Project</label>
-                <input type="text" id="adoProject" value="${ADO_CONFIG.project}" placeholder="e.g. YourProject">
-            </div>
-            <div class="control-group">
-                <label for="adoApiVersion">API Version</label>
-                <input type="text" id="adoApiVersion" value="${ADO_CONFIG.apiVersion}" placeholder="e.g. 7.1">
-            </div>
-            <div class="control-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" value="${localStorage.getItem('devops_username') || ''}" placeholder="e.g. Gabriel Mederos <email>">
-            </div>
-            <div class="control-group">
-                <label for="adoToken">DevOps Token (PAT)</label>
-                <input type="password" id="adoToken" placeholder="Leave empty to keep existing token">
-            </div>
-            <button id="saveSettingsBtn" class="btn-primary" style="margin-top: 20px;">Save Settings</button>
-        </div>
-    `;
-
-    const usernameInput = container.querySelector('#username');
-    const tokenInput = container.querySelector('#adoToken');
-    const saveSettingsBtn = container.querySelector('#saveSettingsBtn');
-
-    usernameInput.oninput = () => {
-        localStorage.setItem('devops_username', usernameInput.value);
-        updateSearchButtonState(dialog);
-    };
-
-    saveSettingsBtn.onclick = () => {
-        const newOrgUrl = container.querySelector('#adoOrgUrl').value.trim();
-        const newProject = container.querySelector('#adoProject').value.trim();
-        const newApiVersion = container.querySelector('#adoApiVersion').value.trim();
-        const newToken = tokenInput.value.trim();
-
-        if (newOrgUrl && newProject && newApiVersion) {
-            localStorage.setItem('ado_orgUrl', newOrgUrl);
-            localStorage.setItem('ado_project', newProject);
-            localStorage.setItem('ado_apiVersion', newApiVersion);
-
-            ADO_CONFIG.orgUrl = newOrgUrl;
-            ADO_CONFIG.project = newProject;
-            ADO_CONFIG.apiVersion = newApiVersion;
-
-            if (newToken) {
-                const encoded = btoa(':' + newToken);
-                localStorage.setItem('devops_token', encoded);
-                tokenInput.value = '';
-            }
-
-            alert('Settings saved!');
-            updateSearchButtonState(dialog);
-        } else {
-            alert('Please fill all required fields');
-        }
-    };
-}
-
-export function createDevopsDialog() {
-    const dialog = document.createElement('dialog');
-    dialog.classList.add('devops-dialog');
-
-    dialog.innerHTML = `
-        <div class="dialog-header">
-            <h2 style="color: white;">Azure DevOps Tasks</h2>
-            <button class="close-btn">&times;</button>
-        </div>
-        
-        <div class="tabs-nav" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 15px;">
-            <button class="tab-btn active" data-tab="tasks" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 2px solid #0078d4; font-weight: bold;">Tasks</button>
-            <button class="tab-btn" data-tab="settings" style="padding: 10px 20px; border: none; background: none; cursor: pointer;">Settings</button>
-        </div>
-        
-        <div class="dialog-body">
-            <div class="tab-content" data-content="tasks"></div>
-            <div class="tab-content" data-content="settings" style="display: none;"></div>
-        </div>
-    `;
-
-    const closeBtn = dialog.querySelector('.close-btn');
-    const tasksTabBtn = dialog.querySelector('[data-tab="tasks"]');
-    const settingsTabBtn = dialog.querySelector('[data-tab="settings"]');
-    const tasksContent = dialog.querySelector('[data-content="tasks"]');
-    const settingsContent = dialog.querySelector('[data-content="settings"]');
-
-    closeBtn.onclick = () => dialog.close();
-
-    createTasksContent(tasksContent, dialog);
-    createSettingsContent(settingsContent, dialog);
-
-    tasksTabBtn.onclick = () => {
-        tasksTabBtn.classList.add('active');
-        tasksTabBtn.style.borderBottom = '2px solid #0078d4';
-        tasksTabBtn.style.fontWeight = 'bold';
-
-        settingsTabBtn.classList.remove('active');
-        settingsTabBtn.style.borderBottom = 'none';
-        settingsTabBtn.style.fontWeight = 'normal';
-
-        tasksContent.style.display = 'block';
-        settingsContent.style.display = 'none';
-    };
-
-    settingsTabBtn.onclick = () => {
-        settingsTabBtn.classList.add('active');
-        settingsTabBtn.style.borderBottom = '2px solid #0078d4';
-        settingsTabBtn.style.fontWeight = 'bold';
-
-        tasksTabBtn.classList.remove('active');
-        tasksTabBtn.style.borderBottom = 'none';
-        tasksTabBtn.style.fontWeight = 'normal';
-
-        settingsContent.style.display = 'block';
-        tasksContent.style.display = 'none';
-    };
-
-    return dialog;
-}
-
-export function showDevOpsDialog() {
-    let dialog = querySelectors.query(querySelectors.devopsDialog);
-    if (!dialog) {
-        dialog = createDevopsDialog();
-        document.body.appendChild(dialog);
-    }
-    dialog.showModal();
-    loadInitialData(dialog);
-}
-
-// Button injection functionality
-function addDevOpsButton() {
-    const toolbarSelector = 'oj-toolbar[aria-label="Header Toolbar"]';
-    let toolbarButtonsContainer = document.querySelector(toolbarSelector);
-
-    if (toolbarButtonsContainer) {
-        createAndAppendButton(toolbarButtonsContainer);
-    } else {
-        let interval = setInterval(() => {
-            toolbarButtonsContainer = document.querySelector(toolbarSelector);
-            if (toolbarButtonsContainer) {
-                clearInterval(interval);
-                createAndAppendButton(toolbarButtonsContainer);
-            }
-        }, 200);
-    }
-}
-
-function createAndAppendButton(container) {
-    if (container.querySelector('.devops-btn')) return;
-
-    const button = document.createElement('button');
-    button.textContent = 'Add from DevOps';
-    button.classList.add('BaseButtonStyles_styles_base__jvi3ds0', 'devops-btn');
-    button.classList.add('BaseButtonStyles_styles_sizes_sm__jvi3ds2d');
-    button.classList.add('BaseButtonStyles_styles_variants_outlined_base__jvi3dso');
-    button.classList.add('BaseButtonStyles_styles_styled__jvi3ds1');
-    button.classList.add('BaseButtonStyles_styles_styledOutline__jvi3ds2');
-    button.classList.add('BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3dsv');
-    button.style.borderRadius = '5px';
-    button.style.fontWeight = '600';
-    button.onclick = showDevOpsDialog;
-
-    if (container.firstChild) {
-        container.insertBefore(button, container.firstChild);
-    } else {
-        container.appendChild(button);
-    }
-}
-
-// Time sheet integration functions
-
-
-// Wait for an editor host (native input or JET host) to appear inside a cell
 function waitForEditorHost(cell, maxAttempts = 12, interval = 100) {
     return new Promise((resolve) => {
         let attempts = 0;
         const check = () => {
-            const native = cell.querySelector('input');
-            const ojHost = cell.querySelector('oj-input-text, oj-input-number, oj-input-date, oj-text-area');
-            const contentEditable = cell.querySelector('[contenteditable="true"]');
+            const native = querySelectors.queryFrom(cell, querySelectors.input);
+            const ojHost = querySelectors.queryFrom(cell, querySelectors.ojInputComponents);
+            const contentEditable = querySelectors.queryFrom(cell, querySelectors.contentEditable);
             const host = native || ojHost || contentEditable || null;
             if (host) return resolve(host);
             attempts++;
@@ -561,19 +513,16 @@ function waitForEditorHost(cell, maxAttempts = 12, interval = 100) {
     });
 }
 
-// Simulate realistic typing and commit on the editor host (native input or JET host)
 async function simulateTypingAndCommit(editorHost, text) {
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     if (!editorHost) return;
 
-    // Determine native input if available
-    const nativeInput = (editorHost.tagName === 'INPUT') ? editorHost : (editorHost.querySelector ? editorHost.querySelector('input') : null);
+    const nativeInput = (editorHost.tagName === 'INPUT') ? editorHost : (editorHost.querySelector ? querySelectors.queryFrom(editorHost, querySelectors.input) : null);
     const target = nativeInput || editorHost;
 
     try { if (target && typeof target.focus === 'function') target.focus(); } catch (e) { }
 
-    // Clear existing value
     try {
         if (nativeInput) {
             nativeInput.value = '';
@@ -602,20 +551,17 @@ async function simulateTypingAndCommit(editorHost, text) {
         await sleep(20);
     }
 
-    // Dispatch change / component events
     try {
         if (nativeInput) nativeInput.dispatchEvent(new Event('change', { bubbles: true }));
         else editorHost.dispatchEvent(new CustomEvent('ojValueChanged', { detail: { value: text }, bubbles: true }));
     } catch (e) { }
 
-    // Try key events for Enter (commit)
     try {
         const makeKey = (k, kc) => new KeyboardEvent('keydown', { key: k, code: k, keyCode: kc, which: kc, bubbles: true, cancelable: true });
         (target).dispatchEvent(makeKey('Enter', 13));
         (target).dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', keyCode: 13, which: 13, bubbles: true }));
     } catch (e) { }
 
-    // Blur and click outside to force grid to close editor
     try { target && target.blur && target.blur(); } catch (e) { }
     try {
         const dataBodyId = querySelectors.timecardDatagridDatabody[0].replace('#', '');
@@ -627,13 +573,11 @@ async function simulateTypingAndCommit(editorHost, text) {
 
     await sleep(220);
 
-    // Send component-level fallback events
     try { editorHost.dispatchEvent(new CustomEvent('valueChanged', { detail: { value: text }, bubbles: true })); } catch (e) { }
     try { editorHost.dispatchEvent(new CustomEvent('ojValueUpdated', { detail: { value: text }, bubbles: true })); } catch (e) { }
 
     await sleep(120);
 }
-
 
 function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
     createCommentCommand(emptyCell);
@@ -646,16 +590,14 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             const saveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn);
             saveBtn?.click();
 
-            // After saving the comment, attempt to insert the value into the datagrid cell
             await new Promise(r => setTimeout(r, 350));
 
             const freshEmptyCell = findFirstEmptyCellByDate(taskDate);
             if (!freshEmptyCell) {
-                alert("No se pudo encontrar la celda para insertar el valor.");
+                alert(MESSAGES.CELL_NOT_FOUND);
                 return;
             }
 
-            // Activate the cell editor (double-click)
             freshEmptyCell.focus();
             freshEmptyCell.dispatchEvent(new MouseEvent('dblclick', {
                 bubbles: true,
@@ -664,7 +606,6 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
                 detail: 2
             }));
 
-            // Wait for editor host and perform typing+commit
             const editorHost = await waitForEditorHost(freshEmptyCell);
             try {
                 await simulateTypingAndCommit(editorHost || freshEmptyCell, value);
@@ -672,7 +613,6 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
                 console.error('simulateTypingAndCommit error:', e);
             }
 
-            // Verify insertion
             await new Promise(r => setTimeout(r, 250));
             const dataBodyId = querySelectors.timecardDatagridDatabody[0].replace('#', '');
             const dataBody = document.getElementById(dataBodyId);
@@ -681,15 +621,14 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
             const cells = Array.from((dataBody || document.body).querySelectorAll(querySelectors.datagridCell[0]));
             const inserted = cells.some(c => {
                 const txt = c.innerText.trim();
-                const inp = c.querySelector('input');
+                const inp = querySelectors.queryFrom(c, querySelectors.input);
                 const v = inp ? String(inp.value).trim() : '';
                 return txt === stringValue || v === stringValue;
             });
 
             if (inserted) {
-                sessionStorage.setItem('dataAlreadyInserted', '1');
+                sessionStorage.setItem(STORAGE_KEYS.SESSION.DATA_INSERTED, UI_TEXT.DATA_INSERTED_TRUE);
             } else {
-                // Fallback: blur active, click body, press Enter, recheck
                 try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) { }
                 try { (dataBody || document.body).click(); } catch (e) { }
                 await new Promise(r => setTimeout(r, 200));
@@ -700,24 +639,24 @@ function handleCellActivation(emptyCell, value, taskId, taskTitle, taskDate) {
                 const recheck = Array.from((dataBody || document.body).querySelectorAll(querySelectors.datagridCell[0]));
                 const reinserted = recheck.some(c => {
                     const txt = c.innerText.trim();
-                    const inp = c.querySelector('input');
+                    const inp = querySelectors.queryFrom(c, querySelectors.input);
                     const v = inp ? String(inp.value).trim() : '';
                     return txt === stringValue || v === stringValue;
                 });
-                if (reinserted) sessionStorage.setItem('dataAlreadyInserted', '1');
+                if (reinserted) sessionStorage.setItem(STORAGE_KEYS.SESSION.DATA_INSERTED, UI_TEXT.DATA_INSERTED_TRUE);
                 else console.warn('No se verificó la inserción del valor en la celda.');
             }
         } else {
-            alert("No se pudo agregar el comentario. Intente nuevamente.");
+            alert(MESSAGES.COMMENT_FAILED);
         }
     }, 300);
 }
 
 function processTaskInsertion(task) {
-    const taskDate = task.fields['System.ChangedDate'];
-    const originalEstimate = task.fields['Microsoft.VSTS.Scheduling.OriginalEstimate'] || '';
-    const taskId = task.fields['System.Id'];
-    const taskTitle = task.fields['System.Title'];
+    const taskDate = task.fields[FIELD_KEYS.CHANGED_DATE];
+    const originalEstimate = task.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || '';
+    const taskId = task.fields[FIELD_KEYS.ID];
+    const taskTitle = task.fields[FIELD_KEYS.TITLE];
 
     setTimeout(() => {
         const emptyCell = findFirstEmptyCellByDate(taskDate);
@@ -731,19 +670,19 @@ function processTaskInsertion(task) {
 }
 
 function addToTimeSheet(id) {
-    const cachedData = sessionStorage.getItem('devops_tasks_cache');
+    const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE);
     if (!cachedData) return;
 
     const tasks = JSON.parse(cachedData);
-    const task = tasks.find(t => t.fields['System.Id'] == id);
+    const task = tasks.find(t => t.fields[FIELD_KEYS.ID] == id);
 
     if (!task) {
-        alert('Task not found in cache.');
+        alert(MESSAGES.TASK_NOT_FOUND);
         return;
     }
 
     startCompletionCheck();
-    sessionStorage.setItem('devOpsRowJSON', JSON.stringify(task));
+    sessionStorage.setItem(STORAGE_KEYS.SESSION.ROW_JSON, JSON.stringify(task));
 
     const dialog = querySelectors.query(querySelectors.devopsDialog);
     if (dialog) dialog.close();
@@ -751,19 +690,51 @@ function addToTimeSheet(id) {
 }
 
 function startCompletionCheck() {
-    sessionStorage.setItem('dataAlreadyInserted', '0');
+    sessionStorage.setItem(STORAGE_KEYS.SESSION.DATA_INSERTED, UI_TEXT.DATA_INSERTED_FALSE);
 
     const interval = setInterval(() => {
-        const status = sessionStorage.getItem('dataAlreadyInserted');
+        const status = sessionStorage.getItem(STORAGE_KEYS.SESSION.DATA_INSERTED);
 
-        if (status === '1') {
+        if (status === UI_TEXT.DATA_INSERTED_TRUE) {
             clearInterval(interval);
             showDevOpsDialog();
         }
     }, 1000);
 }
 
-// Initialize Azure DevOps integration
+function addDevOpsButton() {
+    let toolbarButtonsContainer = querySelectors.query(querySelectors.headerToolbar);
+
+    if (toolbarButtonsContainer) {
+        createAndAppendButton(toolbarButtonsContainer);
+    } else {
+        let interval = setInterval(() => {
+            toolbarButtonsContainer = querySelectors.query(querySelectors.headerToolbar);
+            if (toolbarButtonsContainer) {
+                clearInterval(interval);
+                createAndAppendButton(toolbarButtonsContainer);
+            }
+        }, 200);
+    }
+}
+
+function createAndAppendButton(container) {
+    if (querySelectors.queryFrom(container, querySelectors.devopsBtn)) return;
+
+    const button = document.createElement('button');
+    button.textContent = BUTTON_CONFIG.TEXT;
+    button.classList.add(...BUTTON_CLASSES);
+    button.style.borderRadius = BUTTON_CONFIG.BORDER_RADIUS;
+    button.style.fontWeight = BUTTON_CONFIG.FONT_WEIGHT;
+    button.onclick = showDevOpsDialog;
+
+    if (container.firstChild) {
+        container.insertBefore(button, container.firstChild);
+    } else {
+        container.appendChild(button);
+    }
+}
+
 export function initAzureDevOps() {
     addDevOpsButton();
 }

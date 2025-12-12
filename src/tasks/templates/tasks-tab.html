@@ -1,0 +1,33 @@
+<div class="controls">
+    <div class="control-group">
+        <label for="startDate">Start Date</label>
+        <input type="date" id="startDate">
+    </div>
+    <div class="control-group">
+        <label for="endDate">End Date</label>
+        <input type="date" id="endDate">
+    </div>
+    <button id="searchBtn" class="btn-primary" style="align-self: end;" disabled>Search</button>
+</div>
+
+<div class="tasks-table-container">
+    <table class="tasks-table">
+        <thead>
+            <tr>
+                <th data-column="id" style="cursor: pointer; user-select: none;" title="Click to sort">Task ID</th>
+                <th data-column="title" style="cursor: pointer; user-select: none;" title="Click to sort">Title</th>
+                <th data-column="date" style="cursor: pointer; user-select: none;" title="Click to sort">Changed Date
+                </th>
+                <th data-column="status" style="cursor: pointer; user-select: none;" title="Click to sort">Status</th>
+                <th data-column="estimate" style="cursor: pointer; user-select: none;" title="Click to sort">Original
+                    Estimate</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tasksBody"></tbody>
+    </table>
+</div>
+
+<div class="footer-actions">
+    <button id="addAllBtn" class="btn-secondary experimental-feature">Add all to Time Sheet</button>
+</div>

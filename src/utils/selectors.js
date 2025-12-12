@@ -37,6 +37,10 @@ export const querySelectors = {
 
     headerToolbar: ['oj-toolbar[aria-label="Header Toolbar"]'],
 
+    input: ['input'],
+    ojInputComponents: ['oj-input-text, oj-input-number, oj-input-date, oj-text-area'],
+    contentEditable: ['[contenteditable="true"]'],
+
     // Helper function
     query: function (selectorList) {
         return selectorList.map(it => document.querySelector(it)).find(it => it);

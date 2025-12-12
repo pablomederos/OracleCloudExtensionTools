@@ -1,7 +1,17 @@
 // Azure DevOps API Module
 // Handles all API calls to Azure DevOps
 
-// ADO Configuration
+const FIELD_KEYS = {
+    ID: 'System.Id',
+    TITLE: 'System.Title',
+    CHANGED_DATE: 'System.ChangedDate',
+    STATE: 'System.State',
+    WORK_ITEM_TYPE: 'System.WorkItemType',
+    TEAM_PROJECT: 'System.TeamProject',
+    CHANGED_BY: 'System.ChangedBy',
+    ORIGINAL_ESTIMATE: 'Microsoft.VSTS.Scheduling.OriginalEstimate'
+};
+
 export const ADO_CONFIG = {
     orgUrl: localStorage.getItem('ado_orgUrl') || '',
     project: localStorage.getItem('ado_project') || '',
@@ -23,13 +33,13 @@ export function getAuthHeader() {
 
 export async function fetchTaskIds(startDate, endDate, username) {
     const query = `
-    SELECT [System.Id]
+    SELECT [${FIELD_KEYS.ID}]
     FROM workitems
-    WHERE [System.WorkItemType] = 'Task'
-    AND [System.TeamProject] = '${ADO_CONFIG.project}'
-    AND [System.ChangedDate] >= '${startDate}'
-    AND [System.ChangedDate] <= '${endDate}'
-    AND [System.ChangedBy] = '${username}'
+    WHERE [${FIELD_KEYS.WORK_ITEM_TYPE}] = 'Task'
+    AND [${FIELD_KEYS.TEAM_PROJECT}] = '${ADO_CONFIG.project}'
+    AND [${FIELD_KEYS.CHANGED_DATE}] >= '${startDate}'
+    AND [${FIELD_KEYS.CHANGED_DATE}] <= '${endDate}'
+    AND [${FIELD_KEYS.CHANGED_BY}] = '${username}'
 `;
 
     const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/wiql?api-version=${ADO_CONFIG.apiVersion}`;
@@ -63,11 +73,11 @@ export async function fetchWorkItemDetails(ids) {
     if (!ids || ids.length === 0) return [];
 
     const fields = [
-        'System.Id',
-        'System.Title',
-        'System.ChangedDate',
-        'System.State',
-        'Microsoft.VSTS.Scheduling.OriginalEstimate'
+        FIELD_KEYS.ID,
+        FIELD_KEYS.TITLE,
+        FIELD_KEYS.CHANGED_DATE,
+        FIELD_KEYS.STATE,
+        FIELD_KEYS.ORIGINAL_ESTIMATE
     ].join(',');
 
     const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/workitems?ids=${ids.join(',')}&fields=${fields}&api-version=${ADO_CONFIG.apiVersion}`;
