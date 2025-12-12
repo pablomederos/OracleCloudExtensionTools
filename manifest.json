@@ -28,6 +28,8 @@
                 "src/styles/dialog.js",
                 "src/utils/dom.js",
                 "src/utils/selectors.js",
+                "src/utils/constants.js",
+                "src/utils/oracle-grid.js",
                 "src/tasks/azure-devops-api.js",
                 "src/tasks/azure-devops-dialog.js",
                 "src/tasks/templates/index.js",
