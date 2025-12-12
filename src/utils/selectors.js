@@ -40,6 +40,7 @@ export const querySelectors = {
     input: ['input'],
     ojInputComponents: ['oj-input-text, oj-input-number, oj-input-date, oj-text-area'],
     contentEditable: ['[contenteditable="true"]'],
+    templateBtn: ['.comment-templates-btn'],
 
     // Helper function
     query: (selectorList) => {

@@ -4,6 +4,8 @@ import { showDevOpsDialog, initAzureDevOps } from './tasks/azure-devops-dialog.j
 import { querySelectors } from './utils/selectors.js'
 import { getShortcutString } from './config/shortcuts.js'
 
+import { initCommentTemplates } from './tasks/comment-templates.js'
+
 addStyles()
 removeHeader()
 
@@ -178,13 +180,13 @@ const onKeyUp = (ev) => {
 
 const initListeners = () => {
     if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) initAzureDevOps()
+    initCommentTemplates()
 
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
 }
 
 initListeners()
-
 export { createCommentCommand, populateCommentTextarea }
 
 const populateCommentTextarea = (taskId, taskTitle) => {

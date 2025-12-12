@@ -32,6 +32,7 @@
                 "src/utils/oracle-grid.js",
                 "src/tasks/azure-devops-api.js",
                 "src/tasks/azure-devops-dialog.js",
+                "src/tasks/comment-templates.js",
                 "src/tasks/templates/index.js",
                 "src/tasks/templates/dialog-structure.html",
                 "src/tasks/templates/tasks-tab.html",
