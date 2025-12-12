@@ -2,7 +2,6 @@ import { querySelectors } from './selectors.js'
 import { MESSAGES, UI_TEXT, STORAGE_KEYS, FIELD_KEYS } from './constants.js'
 import { createCommentCommand, populateCommentTextarea } from '../app.js'
 import { waitForEditorHost, simulateTypingAndCommit } from './dom.js'
-import { showDevOpsDialog } from '../tasks/azure-devops-dialog.js'
 
 export const findFirstEmptyCellByDate = (isoDateString) => {
     const dateObj = new Date(isoDateString)
@@ -138,7 +137,7 @@ const handleCellActivation = async (emptyCell, value, taskId, taskTitle, taskDat
     }, 300)
 }
 
-export const startCompletionCheck = () => {
+export const startCompletionCheck = (onSuccessCallback) => {
     sessionStorage.setItem(STORAGE_KEYS.SESSION.DATA_INSERTED, UI_TEXT.DATA_INSERTED_FALSE)
 
     const interval = setInterval(() => {
@@ -146,7 +145,7 @@ export const startCompletionCheck = () => {
 
         if (status === UI_TEXT.DATA_INSERTED_TRUE) {
             clearInterval(interval)
-            showDevOpsDialog()
+            if (onSuccessCallback) onSuccessCallback()
         }
     }, 1000)
 }

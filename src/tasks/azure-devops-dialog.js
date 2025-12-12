@@ -145,7 +145,7 @@ const createTasksContent = async (container, dialog) => {
 
             if (dialog) dialog.close()
 
-            startCompletionCheck()
+            startCompletionCheck(showDevOpsDialog)
         } else {
             alert(MESSAGES.NO_TASKS_TO_ADD)
         }
@@ -402,7 +402,7 @@ const addToTimeSheet = (id) => {
         return
     }
 
-    startCompletionCheck()
+    startCompletionCheck(showDevOpsDialog)
     sessionStorage.setItem(STORAGE_KEYS.SESSION.ROW_JSON, JSON.stringify(task))
 
     const dialog = querySelectors.query(querySelectors.devopsDialog)
