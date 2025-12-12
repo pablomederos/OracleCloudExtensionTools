@@ -1,5 +1,6 @@
 async function loadTemplate(templatePath) {
-    const response = await fetch(chrome.runtime.getURL(templatePath));
+    const baseUrl = window.ORACLE_TOOLS_CONFIG?.extensionBaseUrl || '';
+    const response = await fetch(baseUrl + templatePath);
     return await response.text();
 }
 

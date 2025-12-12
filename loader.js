@@ -6,7 +6,8 @@
     const settings = await chrome.storage.local.get(['feature_azure_devops', 'feature_experimental_features']);
     const featureFlags = {
         azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true',
-        experimentalFeatures: settings.feature_experimental_features === true || settings.feature_experimental_features === 'true'
+        experimentalFeatures: settings.feature_experimental_features === true || settings.feature_experimental_features === 'true',
+        extensionBaseUrl: chrome.runtime.getURL('')
     };
 
     const configScript = document.createElement('script');
