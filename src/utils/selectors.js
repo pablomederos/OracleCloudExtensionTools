@@ -42,10 +42,10 @@ export const querySelectors = {
     contentEditable: ['[contenteditable="true"]'],
 
     // Helper function
-    query: function (selectorList) {
-        return selectorList.map(it => document.querySelector(it)).find(it => it);
+    query: (selectorList) => {
+        return selectorList.map(it => document.querySelector(it)).find(it => it)
     },
-    queryFrom: function (node, selectorList) {
-        return selectorList.map(it => node?.querySelector(it)).find(it => it);
+    queryFrom: (node, selectorList) => {
+        return selectorList.map(it => node?.querySelector(it)).find(it => it)
     }
-};
+}

@@ -1,5 +1,5 @@
 import addStyles from './styles/dialog.js'
-import removeHeader from './utils/dom.js'
+import { removeHeader } from './utils/dom.js'
 import { showDevOpsDialog, initAzureDevOps } from './tasks/azure-devops-dialog.js'
 import { querySelectors } from './utils/selectors.js'
 import { getShortcutString } from './config/shortcuts.js'
