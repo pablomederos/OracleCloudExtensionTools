@@ -1,6 +1,3 @@
-// Azure DevOps API Module
-// Handles all API calls to Azure DevOps
-
 const FIELD_KEYS = {
     ID: 'System.Id',
     TITLE: 'System.Title',
@@ -18,10 +15,9 @@ export const ADO_CONFIG = {
     apiVersion: localStorage.getItem('ado_apiVersion') || ''
 }
 
-export function getAuthHeader() {
+export const getAuthHeader = () => {
     const storedToken = localStorage.getItem('devops_token')
-    if (!storedToken)
-        alert('Azure DevOps Token not found. Please set it.')
+    if (!storedToken) alert('Azure DevOps Token not found. Please set it.')
 
     const devopsToken = atob(storedToken).substring(1)
 
@@ -31,7 +27,7 @@ export function getAuthHeader() {
     }
 }
 
-export async function fetchTaskIds(startDate, endDate, username) {
+export const fetchTaskIds = async (startDate, endDate, username) => {
     const query = `
     SELECT [${FIELD_KEYS.ID}]
     FROM workitems
@@ -69,7 +65,7 @@ export async function fetchTaskIds(startDate, endDate, username) {
     }
 }
 
-export async function fetchWorkItemDetails(ids) {
+export const fetchWorkItemDetails = async (ids) => {
     if (!ids || ids.length === 0) return []
 
     const fields = [
