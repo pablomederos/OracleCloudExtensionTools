@@ -1,4 +1,5 @@
 import { querySelectors } from '../utils/selectors.js'
+import { showTemplatesDialog } from './templates-dialog.js'
 
 export const initCommentTemplates = () => {
     const observer = new MutationObserver(handleMutations)
@@ -27,10 +28,17 @@ const injectTemplateButton = (container) => {
 
     const button = document.createElement('button')
     button.textContent = 'Comment Templates'
-    button.classList.add(querySelectors.templateBtn[0].replace('.', ''))
+    querySelectors.templateBtn.forEach(cls => {
+        button.classList.add(cls.replace('.', ''))
+    })
     button.style.marginTop = '10px'
     button.style.padding = '5px 10px'
     button.style.cursor = 'pointer'
+
+    button.onclick = (e) => {
+        e.preventDefault()
+        showTemplatesDialog()
+    }
 
     // Insert after textarea
     if (textarea.nextSibling) {

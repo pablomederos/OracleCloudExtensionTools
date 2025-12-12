@@ -16,6 +16,10 @@ export async function getSettingsTabTemplate() {
     return await loadTemplate('src/tasks/templates/settings-tab.html');
 }
 
+export async function getTemplatesDialogTemplate() {
+    return await loadTemplate('src/tasks/templates/templates-dialog.html');
+}
+
 export function fillTemplate(template, data) {
     return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
         return data[key] !== undefined ? data[key] : '';

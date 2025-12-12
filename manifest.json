@@ -35,6 +35,7 @@
                 "src/tasks/comment-templates.js",
                 "src/tasks/templates/index.js",
                 "src/tasks/templates/dialog-structure.html",
+                "src/tasks/templates/templates-dialog.html",
                 "src/tasks/templates/tasks-tab.html",
                 "src/tasks/templates/settings-tab.html",
                 "src/app.js"

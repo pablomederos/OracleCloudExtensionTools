@@ -10,7 +10,8 @@ export const STORAGE_KEYS = {
         TOKEN: 'devops_token',
         ORG_URL: 'ado_orgUrl',
         PROJECT: 'ado_project',
-        API_VERSION: 'ado_apiVersion'
+        API_VERSION: 'ado_apiVersion',
+        TEMPLATES: 'comment_templates'
     }
 };
 
