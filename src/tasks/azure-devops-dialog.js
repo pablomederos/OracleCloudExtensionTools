@@ -142,6 +142,10 @@ const createTasksContent = async (container, dialog) => {
             return
         }
 
+        if (filterSwitch.checked) {
+            updateFilterStorage()
+        }
+
         searchBtn.textContent = UI_TEXT.SEARCHING
         searchBtn.disabled = true
 
