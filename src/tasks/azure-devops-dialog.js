@@ -1,10 +1,11 @@
 import { ADO_CONFIG, fetchTaskIds, fetchWorkItemDetails } from './azure-devops-api.js';
 import { createCommentCommand, populateCommentTextarea } from '../app.js';
 import { querySelectors } from '../utils/selectors.js';
-import { getDialogStructure, 
-    getTasksTabTemplate, 
-    getSettingsTabTemplate, 
-    fillTemplate 
+import {
+    getDialogStructure,
+    getTasksTabTemplate,
+    getSettingsTabTemplate,
+    fillTemplate
 } from './templates/index.js';
 
 const STORAGE_KEYS = {
@@ -420,6 +421,15 @@ function renderTable(workItems, sortColumn = sortState.column, ascending = sortS
             navigator.clipboard.writeText(text).then(() => {
                 const dialog = querySelectors.query(querySelectors.devopsDialog);
                 if (dialog) dialog.close();
+
+                const commentView = querySelectors.query(querySelectors.commentView);
+                const textarea = querySelectors.queryFrom(commentView, querySelectors.commentTextarea);
+
+                if (textarea) {
+                    textarea.value = text;
+                    textarea.focus();
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             });
         };
         actionTd.appendChild(copyBtn);
