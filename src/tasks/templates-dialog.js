@@ -68,7 +68,7 @@ const setupEventListeners = (dialog) => {
         resetEditor(dialog)
         editorPanel.style.display = 'flex'
         emptyState.style.display = 'none'
-        dialog.querySelector('#templateContent').focus()
+        dialog.querySelector('#templateTitle').focus()
     }
 
     cancelTemplateBtn.onclick = () => {
@@ -109,10 +109,8 @@ const renderTemplatesList = (dialog) => {
         item.onmouseleave = () => item.style.backgroundColor = 'transparent'
 
         const titleSpan = document.createElement('span')
-        // Now using content as title (truncated)
-        titleSpan.textContent = template.content.length > 30 ? template.content.substring(0, 30) + '...' : template.content
+        titleSpan.textContent = template.title
         titleSpan.style.fontWeight = '500'
-        titleSpan.title = template.content
         titleSpan.onclick = () => loadTemplateForEditing(dialog, index)
 
         const actionsDiv = document.createElement('div')
@@ -154,6 +152,7 @@ const loadTemplateForEditing = (dialog, index) => {
     const templates = getTemplates()
     const template = templates[index]
 
+    dialog.querySelector('#templateTitle').value = template.title
     dialog.querySelector('#templateContent').value = template.content
     dialog.dataset.editingIndex = index
 
@@ -163,16 +162,18 @@ const loadTemplateForEditing = (dialog, index) => {
 }
 
 const resetEditor = (dialog) => {
+    dialog.querySelector('#templateTitle').value = ''
     dialog.querySelector('#templateContent').value = ''
     delete dialog.dataset.editingIndex
     dialog.querySelector('#editorTitle').textContent = 'New Template'
 }
 
 const saveTemplate = (dialog) => {
+    const title = dialog.querySelector('#templateTitle').value.trim()
     const content = dialog.querySelector('#templateContent').value.trim()
 
-    if (!content) {
-        alert('Please fill content.')
+    if (!title || !content) {
+        alert('Please fill both title and content.')
         return
     }
 
@@ -180,9 +181,9 @@ const saveTemplate = (dialog) => {
     const editingIndex = dialog.dataset.editingIndex
 
     if (editingIndex !== undefined) {
-        templates[editingIndex] = { content }
+        templates[editingIndex] = { title, content }
     } else {
-        templates.push({ content })
+        templates.push({ title, content })
     }
 
     saveTemplates(templates)
