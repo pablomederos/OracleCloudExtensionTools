@@ -34,8 +34,8 @@ const injectTemplateButton = (container) => {
 
     // Insert after textarea
     if (textarea.nextSibling) {
-        textarea.parentNode.insertBefore(button, textarea.nextSibling)
+        textarea.parentNode.parentNode.insertBefore(button, textarea.nextSibling)
     } else {
-        textarea.parentNode.appendChild(button)
+        textarea.parentNode.parentNode.appendChild(button)
     }
 }
