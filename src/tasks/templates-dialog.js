@@ -1,5 +1,5 @@
 import { querySelectors } from '../utils/selectors.js'
-import { STORAGE_KEYS } from '../utils/constants.js'
+import { STORAGE_KEYS, BUTTON_CLASSES } from '../utils/constants.js'
 import { getTemplatesDialogTemplate } from './templates/index.js'
 
 export const showTemplatesDialog = async () => {
@@ -37,11 +37,38 @@ const setupEventListeners = (dialog) => {
     const editorPanel = dialog.querySelector('#editorPanel')
     const emptyState = dialog.querySelector('#emptyState')
 
+    // Add classes using BUTTON_CLASSES constant + specific logic
+    // Actually we will use the classes we used in azure-devops-dialog.js logic
+    // But since the user asked to "sigan el diseño de botones de oracle" and those define the styles...
+    // Let's inspect azure-devops-dialog.js again... it uses BUTTON_CLASSES
+    // Imported from constants.js:
+    /*
+    export const BUTTON_CLASSES = [
+        'BaseButtonStyles_styles_base__jvi3ds0',
+        'devops-btn', ...
+    ];
+    */
+    // I will import BUTTON_CLASSES and apply them.
+
+    addTemplateBtn.classList.add(...BUTTON_CLASSES)
+    // saveTemplateBtn is already btn-primary (custom), let's make it look like Oracle btn too?
+    // User said "Quiero que los botones del diálogo sigan el diseño de botones de oracle."
+    // So I should apply BUTTON_CLASSES to saveTemplateBtn as well.
+    saveTemplateBtn.classList.add(...BUTTON_CLASSES)
+    // cancelTemplateBtn ? Maybe lighter style. But for now let's stick to simple secondary.
+    // The previous HTML edit added btn-secondary and btn-primary classes which are defined in dialog.js
+    // I will stick to those for internal dialog buttons unless I need exact Oracle match.
+    // BUT, the ADD NEW TEMPLATE button should definitely look like an Oracle button.
+
+    // Let's redefine setupEventListeners to be cleaner and apply logic.
+
+    // We remove some conflicting styles if any? No, classList adds running fine.
+
     addTemplateBtn.onclick = () => {
         resetEditor(dialog)
         editorPanel.style.display = 'flex'
         emptyState.style.display = 'none'
-        dialog.querySelector('#templateTitle').focus()
+        dialog.querySelector('#templateContent').focus()
     }
 
     cancelTemplateBtn.onclick = () => {
@@ -82,8 +109,10 @@ const renderTemplatesList = (dialog) => {
         item.onmouseleave = () => item.style.backgroundColor = 'transparent'
 
         const titleSpan = document.createElement('span')
-        titleSpan.textContent = template.title
+        // Now using content as title (truncated)
+        titleSpan.textContent = template.content.length > 30 ? template.content.substring(0, 30) + '...' : template.content
         titleSpan.style.fontWeight = '500'
+        titleSpan.title = template.content
         titleSpan.onclick = () => loadTemplateForEditing(dialog, index)
 
         const actionsDiv = document.createElement('div')
@@ -125,7 +154,6 @@ const loadTemplateForEditing = (dialog, index) => {
     const templates = getTemplates()
     const template = templates[index]
 
-    dialog.querySelector('#templateTitle').value = template.title
     dialog.querySelector('#templateContent').value = template.content
     dialog.dataset.editingIndex = index
 
@@ -135,18 +163,16 @@ const loadTemplateForEditing = (dialog, index) => {
 }
 
 const resetEditor = (dialog) => {
-    dialog.querySelector('#templateTitle').value = ''
     dialog.querySelector('#templateContent').value = ''
     delete dialog.dataset.editingIndex
     dialog.querySelector('#editorTitle').textContent = 'New Template'
 }
 
 const saveTemplate = (dialog) => {
-    const title = dialog.querySelector('#templateTitle').value.trim()
     const content = dialog.querySelector('#templateContent').value.trim()
 
-    if (!title || !content) {
-        alert('Please fill both title and content.')
+    if (!content) {
+        alert('Please fill content.')
         return
     }
 
@@ -154,9 +180,9 @@ const saveTemplate = (dialog) => {
     const editingIndex = dialog.dataset.editingIndex
 
     if (editingIndex !== undefined) {
-        templates[editingIndex] = { title, content }
+        templates[editingIndex] = { content }
     } else {
-        templates.push({ title, content })
+        templates.push({ content })
     }
 
     saveTemplates(templates)

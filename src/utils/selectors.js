@@ -40,7 +40,7 @@ export const querySelectors = {
     input: ['input'],
     ojInputComponents: ['oj-input-text, oj-input-number, oj-input-date, oj-text-area'],
     contentEditable: ['[contenteditable="true"]'],
-    templateBtn: ['.BaseButtonStyles_styles_base__jvi3ds', '.BaseButtonStyles_styles_sizes_sm__jvi3ds2', '.BaseButtonStyles_styles_variants_outlined_base__jvi3ds', '.BaseButtonStyles_styles_styled__jvi3ds', '.BaseButtonStyles_styles_styledOutline__jvi3ds', '.BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3ds'],
+    templateBtn: ['.oracle-tools-template-btn'],
 
     // Helper function
     query: (selectorList) => {

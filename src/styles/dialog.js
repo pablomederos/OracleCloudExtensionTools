@@ -165,6 +165,18 @@ export default function addStyles() {
                 padding-top: 15px;
                 border-top: 1px solid #eee;
             }
+            .oracle-tools-template-btn {
+                background-color: transparent;
+                border: 1px solid var(--PRIMARY-COLOR);
+                color: var(--PRIMARY-COLOR);
+                border-radius: 4px;
+                font-weight: 600;
+                transition: background-color 0.2s, color 0.2s;
+            }
+            .oracle-tools-template-btn:hover {
+                background-color: var(--PRIMARY-COLOR);
+                color: white;
+            }
         `
 
     if (!window.ORACLE_TOOLS_CONFIG?.experimentalFeatures) {
