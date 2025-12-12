@@ -89,3 +89,92 @@ export const simulateTypingAndCommit = async (editorHost, text, querySelectors) 
 
     await sleep(120)
 }
+
+let commentTriggered = false
+
+export const resetCommentTrigger = () => {
+    commentTriggered = false
+}
+
+export const createCommentCommand = (cellElement) => {
+    if (commentTriggered) return
+    commentTriggered = true
+
+    let focusedElement = cellElement || document.activeElement
+    if (focusedElement.tagName != 'DIV')
+        focusedElement = focusedElement.parentElement
+
+    if (focusedElement?.tagName != 'DIV') return
+
+    if (focusedElement?.dispatchEvent(
+        new MouseEvent('contextmenu', {
+            bubbles: true
+        })
+    )) openInsertCommentWindow(querySelectors)
+}
+
+const openInsertCommentWindow = (querySelectors) => {
+    let commentBtn = querySelectors.query(querySelectors.commentOption)
+    if (commentBtn) {
+        commentBtn.click()
+        return
+    }
+
+    let intervalCount = 0
+    const searchBtnInterval = setInterval(() => {
+        commentBtn = querySelectors.query(querySelectors.commentOption)
+        if (commentBtn) {
+            commentBtn.click()
+            intervalCount = 0
+            clearInterval(searchBtnInterval)
+
+            let commentView = querySelectors.query(querySelectors.commentView)
+            commentView?.querySelector('textarea')?.focus()
+            if (!commentView) {
+                const commentInputInterval = setInterval(() => {
+                    commentView = querySelectors.query(querySelectors.commentView)
+                    if (commentView) {
+                        clearInterval(commentInputInterval)
+                        commentView.querySelector('textarea')?.focus()
+                        return
+                    }
+                    intervalCount++
+                    if (intervalCount > 5) clearInterval(commentInputInterval)
+                }, 300)
+            }
+        } else {
+            intervalCount++
+            if (intervalCount > 10) clearInterval(searchBtnInterval)
+        }
+    }, 200)
+}
+
+export const populateCommentTextarea = (taskId, taskTitle) => {
+    const commentText = `${taskId}: ${taskTitle}`
+
+    return new Promise((resolve) => {
+        const tryPopulate = (attempts = 0) => {
+            if (attempts > 10) {
+                console.warn('No se pudo encontrar el textarea de comentarios')
+                resolve(false)
+                return
+            }
+
+            const commentView = querySelectors.query(querySelectors.commentView)
+            const textarea = commentView?.querySelector('textarea')
+
+            if (textarea) {
+                textarea.value = commentText
+                textarea.focus()
+
+                const inputEvent = new Event('input', { bubbles: true })
+                textarea.dispatchEvent(inputEvent)
+                resolve(true)
+            } else {
+                setTimeout(() => tryPopulate(attempts + 1), 200)
+            }
+        }
+
+        tryPopulate()
+    })
+}

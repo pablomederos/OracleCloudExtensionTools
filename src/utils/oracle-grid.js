@@ -1,6 +1,6 @@
 import { querySelectors } from './selectors.js'
 import { MESSAGES, UI_TEXT, STORAGE_KEYS, FIELD_KEYS } from './constants.js'
-import { createCommentCommand, populateCommentTextarea } from '../app.js'
+import { createCommentCommand, populateCommentTextarea } from './dom.js'
 import { waitForEditorHost, simulateTypingAndCommit } from './dom.js'
 
 export const findFirstEmptyCellByDate = (isoDateString) => {
