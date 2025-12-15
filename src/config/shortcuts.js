@@ -26,8 +26,8 @@ export const SHORTCUTS = {
         alt: false,
         keyCode: 83, // S
         key: 'S',
-        label: 'Save Timecard',
-        description: 'Save the current timecard'
+        label: 'Save Timecard/Comment',
+        description: 'Save the current timecard or comment'
     }
 }
 
