@@ -5,7 +5,7 @@ const FIELD_KEYS = {
     STATE: 'System.State',
     WORK_ITEM_TYPE: 'System.WorkItemType',
     TEAM_PROJECT: 'System.TeamProject',
-    CHANGED_BY: 'System.ChangedBy',
+    ASSIGNED_TO: 'System.AssignedTo',
     ORIGINAL_ESTIMATE: 'Microsoft.VSTS.Scheduling.OriginalEstimate'
 }
 
@@ -35,7 +35,7 @@ export const fetchTaskIds = async (startDate, endDate, username) => {
     AND [${FIELD_KEYS.TEAM_PROJECT}] = '${ADO_CONFIG.project}'
     AND [${FIELD_KEYS.CHANGED_DATE}] >= '${startDate}'
     AND [${FIELD_KEYS.CHANGED_DATE}] <= '${endDate}'
-    AND [${FIELD_KEYS.CHANGED_BY}] = '${username}'
+    AND [${FIELD_KEYS.ASSIGNED_TO}] = '${username}'
 `
 
     const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/wiql?api-version=${ADO_CONFIG.apiVersion}`
