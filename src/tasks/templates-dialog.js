@@ -17,8 +17,7 @@ export const showTemplatesDialog = async () => {
 
 const createTemplatesDialog = async () => {
     const dialog = document.createElement('dialog')
-    dialog.classList.add('devops-dialog', 'templates-dialog') // Reusing devops-dialog styles
-    // Override width for this specific dialog if needed, via inline style or new class
+    dialog.classList.add('devops-dialog', 'templates-dialog')
     dialog.style.width = '800px';
     dialog.style.maxWidth = '90vw';
 
@@ -39,32 +38,9 @@ const setupEventListeners = (dialog) => {
     const editorPanel = dialog.querySelector('#editorPanel')
     const emptyState = dialog.querySelector('#emptyState')
 
-    // Add classes using BUTTON_CLASSES constant + specific logic
-    // Actually we will use the classes we used in azure-devops-dialog.js logic
-    // But since the user asked to "sigan el diseño de botones de oracle" and those define the styles...
-    // Let's inspect azure-devops-dialog.js again... it uses BUTTON_CLASSES
-    // Imported from constants.js:
-    /*
-    export const BUTTON_CLASSES = [
-        'BaseButtonStyles_styles_base__jvi3ds0',
-        'devops-btn', ...
-    ];
-    */
-    // I will import BUTTON_CLASSES and apply them.
 
     addTemplateBtn.classList.add(...BUTTON_CLASSES)
-    // saveTemplateBtn is already btn-primary (custom), let's make it look like Oracle btn too?
-    // User said "Quiero que los botones del diálogo sigan el diseño de botones de oracle."
-    // So I should apply BUTTON_CLASSES to saveTemplateBtn as well.
     saveTemplateBtn.classList.add(...BUTTON_CLASSES)
-    // cancelTemplateBtn ? Maybe lighter style. But for now let's stick to simple secondary.
-    // The previous HTML edit added btn-secondary and btn-primary classes which are defined in dialog.js
-    // I will stick to those for internal dialog buttons unless I need exact Oracle match.
-    // BUT, the ADD NEW TEMPLATE button should definitely look like an Oracle button.
-
-    // Let's redefine setupEventListeners to be cleaner and apply logic.
-
-    // We remove some conflicting styles if any? No, classList adds running fine.
 
     addTemplateBtn.onclick = () => {
         resetEditor(dialog)
@@ -190,7 +166,7 @@ const saveTemplate = (dialog) => {
 
     saveTemplates(templates)
     renderTemplatesList(dialog)
-    dialog.querySelector('#cancelTemplateBtn').click() // Close editor
+    dialog.querySelector('#cancelTemplateBtn').click()
 }
 
 const deleteTemplate = (index, dialog) => {
@@ -199,7 +175,6 @@ const deleteTemplate = (index, dialog) => {
     saveTemplates(templates)
     renderTemplatesList(dialog)
 
-    // If we were editing the deleted one, close editor
     if (dialog.dataset.editingIndex == index) {
         dialog.querySelector('#cancelTemplateBtn').click()
     }

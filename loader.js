@@ -1,5 +1,3 @@
-// Loader Script - Injects ES6 modules into the page DOM
-// This runs as a traditional content script and injects module scripts into the page
 ; (async function () {
     'use strict';
 

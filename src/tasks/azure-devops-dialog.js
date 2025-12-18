@@ -111,7 +111,6 @@ const createTasksContent = async (container, dialog) => {
             localStorage.removeItem(STORAGE_KEYS.LOCAL.FILTER_ENABLED)
             localStorage.removeItem(STORAGE_KEYS.LOCAL.FILTER_START_DATE)
             localStorage.removeItem(STORAGE_KEYS.LOCAL.FILTER_END_DATE)
-            // Clear cache as requested
             sessionStorage.removeItem(STORAGE_KEYS.SESSION.TASKS_CACHE)
         }
     }

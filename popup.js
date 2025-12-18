@@ -1,4 +1,3 @@
-// Popup script - Manages feature toggles
 import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
 
 ; (function () {
@@ -17,7 +16,6 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
         }
     };
 
-    // Load saved states
     async function loadFeatureStates() {
         for (const feature of Object.values(FEATURES)) {
             const toggle = document.getElementById(feature.id);
@@ -29,7 +27,6 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
         }
     }
 
-    // Save all features at once
     async function saveAllFeatures() {
         const updates = {};
         for (const feature of Object.values(FEATURES)) {
@@ -48,7 +45,6 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
         }
     }
 
-    // State tracking
     let pendingChanges = false;
     const applyBtn = document.getElementById('apply-btn');
 
@@ -72,18 +68,15 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
             pendingChanges = false;
             updateApplyButton();
 
-            // Reload active tab
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 if (tabs[0]) {
                     chrome.tabs.reload(tabs[0].id);
                 }
             });
 
-            // Optional: Close popup after applying
             window.close();
         });
 
-        // Navigation between pages
         const mainPage = document.querySelector('body > .header').parentElement;
         const shortcutsPage = document.getElementById('shortcuts-page');
         const viewShortcutsLink = document.getElementById('view-shortcuts-link');
@@ -91,33 +84,26 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
 
         viewShortcutsLink.addEventListener('click', (e) => {
             e.preventDefault();
-            // Hide main page elements
             document.querySelector('body > .header').style.display = 'none';
             document.querySelector('body > .content').style.display = 'none';
             document.querySelector('body > .footer').style.display = 'none';
-            // Show shortcuts page
             shortcutsPage.style.display = 'block';
         });
 
         backButton.addEventListener('click', () => {
-            // Show main page elements
             document.querySelector('body > .header').style.display = 'block';
             document.querySelector('body > .content').style.display = 'block';
             document.querySelector('body > .footer').style.display = 'block';
-            // Hide shortcuts page
             shortcutsPage.style.display = 'none';
         });
     });
 
-    // Populate shortcuts list dynamically from shared config
     function populateShortcuts() {
         const shortcutsList = document.querySelector('#shortcuts-page .shortcuts-list');
         if (!shortcutsList) return;
 
-        // Clear existing content
         shortcutsList.innerHTML = '';
 
-        // Generate shortcuts from config
         Object.keys(SHORTCUTS).forEach(key => {
             const shortcut = SHORTCUTS[key];
             const keys = getShortcutDisplay(key);
@@ -128,13 +114,11 @@ import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js';
             const shortcutKeys = document.createElement('div');
             shortcutKeys.className = 'shortcut-keys';
 
-            // Create kbd elements for each key
             keys.forEach((keyName, index) => {
                 const kbd = document.createElement('kbd');
                 kbd.textContent = keyName;
                 shortcutKeys.appendChild(kbd);
 
-                // Add '+' separator between keys
                 if (index < keys.length - 1) {
                     shortcutKeys.appendChild(document.createTextNode(' + '));
                 }

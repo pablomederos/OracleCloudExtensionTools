@@ -1,12 +1,10 @@
-// Centralized keyboard shortcuts configuration
-// Single source of truth for all keyboard shortcuts in the extension
 
 export const SHORTCUTS = {
     createComment: {
         ctrl: true,
         shift: false,
         alt: true,
-        keyCode: 67, // C
+        keyCode: 67,
         key: 'C',
         label: 'Open Comments Dialog',
         description: 'Open the comment dialog for the active cell'
@@ -15,7 +13,7 @@ export const SHORTCUTS = {
         ctrl: true,
         shift: false,
         alt: false,
-        keyCode: 68, // D
+        keyCode: 68,
         key: 'D',
         label: 'Open Azure DevOps Dialog',
         description: 'Open the Azure DevOps tasks dialog'
@@ -24,7 +22,7 @@ export const SHORTCUTS = {
         ctrl: true,
         shift: false,
         alt: false,
-        keyCode: 83, // S
+        keyCode: 83,
         key: 'S',
         label: 'Save Timecard/Comment',
         description: 'Save the current timecard or comment'

@@ -42,7 +42,6 @@ export const querySelectors = {
     contentEditable: ['[contenteditable="true"]'],
     templateBtn: ['.oracle-tools-template-btn'],
 
-    // Helper function
     query: (selectorList) => {
         return selectorList.map(it => document.querySelector(it)).find(it => it)
     },

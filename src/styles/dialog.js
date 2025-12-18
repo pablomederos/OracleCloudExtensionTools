@@ -1,4 +1,3 @@
-// Styles for Oracle Cloud DevOps Extension
 
 export default function addStyles() {
     const style = document.createElement('style')
@@ -178,7 +177,6 @@ export default function addStyles() {
                 color: white;
             }
 
-            /* Toggle Switch */
             .switch {
                 position: relative;
                 display: inline-block;

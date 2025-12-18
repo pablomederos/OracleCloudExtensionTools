@@ -39,7 +39,6 @@ const injectButtons = (container) => {
     btnContainer.appendChild(templatesBtn)
     btnContainer.appendChild(devopsBtn)
 
-    // Insert after textarea
     if (textarea.nextSibling) {
         textarea.parentNode.parentNode.parentNode.insertBefore(btnContainer, textarea.nextSibling)
     } else {
