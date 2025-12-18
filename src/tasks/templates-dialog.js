@@ -3,14 +3,16 @@ import { STORAGE_KEYS, BUTTON_CLASSES } from '../utils/constants.js'
 import { getTemplatesDialogTemplate } from './templates/index.js'
 
 export const showTemplatesDialog = async () => {
-    let dialog = document.querySelector('.templates-dialog')
-    if (!dialog) {
-        dialog = await createTemplatesDialog()
-        document.body.appendChild(dialog)
-    }
+    try {
+        let dialog = document.querySelector('.templates-dialog')
+        if (!dialog) {
+            dialog = await createTemplatesDialog()
+            document.body.appendChild(dialog)
+        }
 
-    dialog.showModal()
-    renderTemplatesList(dialog)
+        dialog.showModal()
+        renderTemplatesList(dialog)
+    } catch (e) { console.error('Error showing templates dialog:', e) }
 }
 
 const createTemplatesDialog = async () => {

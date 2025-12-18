@@ -11,14 +11,14 @@ export const initCommentTemplates = () => {
 }
 
 const handleMutations = (mutations) => {
-    for (const mutation of mutations) {
-        if (mutation.addedNodes.length) {
-            const commentView = querySelectors.query(querySelectors.commentView)
-            if (commentView) {
-                injectButtons(commentView)
+    try {
+        for (const mutation of mutations) {
+            if (mutation.addedNodes.length) {
+                const commentView = querySelectors.query(querySelectors.commentView)
+                if (commentView) injectButtons(commentView)
             }
         }
-    }
+    } catch (e) { console.error('Error handling DOM mutations:', e) }
 }
 
 const injectButtons = (container) => {

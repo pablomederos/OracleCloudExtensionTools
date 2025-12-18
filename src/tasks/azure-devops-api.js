@@ -17,7 +17,10 @@ export const ADO_CONFIG = {
 
 export const getAuthHeader = () => {
     const storedToken = localStorage.getItem('devops_token')
-    if (!storedToken) alert('Azure DevOps Token not found. Please set it.')
+    if (!storedToken) {
+        alert('Azure DevOps Token not found. Please set it.')
+        return null
+    }
 
     const devopsToken = atob(storedToken).substring(1)
 

@@ -6,8 +6,8 @@ import { getShortcutString } from './config/shortcuts.js'
 
 import { initCommentTemplates } from './tasks/comment-templates.js'
 
-addStyles()
-removeHeader()
+try { addStyles() } catch (e) { console.error('Error adding styles:', e) }
+try { removeHeader() } catch (e) { console.error('Error removing header:', e) }
 
 let ctrlBtnPressed = false
 let ctrlKeyCode = 0
@@ -46,36 +46,39 @@ const isScriptCommand = () => {
 
 
 const saveTimecard = () => {
-    const commentView = querySelectors.query(querySelectors.commentView)
+    try {
+        const commentView = querySelectors.query(querySelectors.commentView)
 
-    if (commentView) {
-        const commentSaveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn)
-        if (commentSaveBtn) commentSaveBtn.click()
-    } else {
-        const saveBtn = querySelectors.query(querySelectors.saveBtn)
-        if (saveBtn) saveBtn.click()
-    }
+        if (commentView) {
+            const commentSaveBtn = querySelectors.queryFrom(commentView, querySelectors.saveBtn)
+            if (commentSaveBtn) commentSaveBtn.click()
+        } else {
+            const saveBtn = querySelectors.query(querySelectors.saveBtn)
+            if (saveBtn) saveBtn.click()
+        }
+    } catch (e) { console.error('Error saving timecard:', e) }
 }
 
 const checkCommand = () => {
-    const keyCombinations = [
-        ctrlBtnPressed, shiftBtnPressed, altBtnPressed,
-        actionkeyPressedCode,
-        window.location.pathname
-    ].join(',')
+    try {
+        const keyCombinations = [
+            ctrlBtnPressed, shiftBtnPressed, altBtnPressed,
+            actionkeyPressedCode,
+            window.location.pathname
+        ].join(',')
 
-
-    switch (keyCombinations) {
-        case `${commands.createComment},${pages.timecardsPage}`:
-            createCommentCommand()
-            break
-        case `${commands.showDevOpsDialog},${pages.timecardsPage}`:
-            if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) showDevOpsDialog()
-            break
-        case `${commands.saveTimeCard},${pages.timecardsPage}`:
-            saveTimecard()
-            break
-    }
+        switch (keyCombinations) {
+            case `${commands.createComment},${pages.timecardsPage}`:
+                createCommentCommand()
+                break
+            case `${commands.showDevOpsDialog},${pages.timecardsPage}`:
+                if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) showDevOpsDialog()
+                break
+            case `${commands.saveTimeCard},${pages.timecardsPage}`:
+                saveTimecard()
+                break
+        }
+    } catch (e) { console.error('Error checking command:', e) }
 }
 
 const clearCommands = () => {
@@ -83,46 +86,41 @@ const clearCommands = () => {
 }
 
 const onKeyDown = (ev) => {
-    if (
-        [
-            'control-group'
-        ].some(it => ev.target.classList.contains('it'))
-    ) return
+    try {
+        if (['control-group'].some(it => ev.target.classList.contains('it'))) return
 
-    ctrlBtnPressed = ctrlBtnPressed || ev.ctrlKey
-    shiftBtnPressed = shiftBtnPressed || ev.shiftKey
-    altBtnPressed = altBtnPressed || ev.altKey
+        ctrlBtnPressed = ctrlBtnPressed || ev.ctrlKey
+        shiftBtnPressed = shiftBtnPressed || ev.shiftKey
+        altBtnPressed = altBtnPressed || ev.altKey
 
-    if (!ctrlKeyCode && ev.ctrlKey) ctrlKeyCode = ev.keyCode
+        if (!ctrlKeyCode && ev.ctrlKey) ctrlKeyCode = ev.keyCode
+        if (!shiftKeyCode && ev.shiftKey) shiftKeyCode = ev.keyCode
+        if (!altKeyCode && ev.altKey) altKeyCode = ev.keyCode
 
-    if (!shiftKeyCode && ev.shiftKey) shiftKeyCode = ev.keyCode
+        if (![ctrlKeyCode, shiftKeyCode, altKeyCode].some(it => it === ev.keyCode))
+            actionkeyPressedCode = parseInt(ev.keyCode)
 
-    if (!altKeyCode && ev.altKey) altKeyCode = ev.keyCode
-
-    if (
-        ![ctrlKeyCode, shiftKeyCode, altKeyCode]
-            .some(it => it === ev.keyCode)
-    ) actionkeyPressedCode = parseInt(ev.keyCode)
-
-    if (isScriptCommand()) {
-        ev.preventDefault()
-        checkCommand()
-    }
+        if (isScriptCommand()) {
+            ev.preventDefault()
+            checkCommand()
+        }
+    } catch (e) { console.error('Error on keydown:', e) }
 }
 
 const onKeyUp = (ev) => {
-    switch (ev.keyCode) {
-        case ctrlKeyCode: ctrlBtnPressed = false
-            break
-        case shiftKeyCode: shiftBtnPressed = false
-            break
-        case altKeyCode: altBtnPressed = false
-            break
-        case actionkeyPressedCode: actionkeyPressedCode = false
-            break
-    }
-
-    clearCommands()
+    try {
+        switch (ev.keyCode) {
+            case ctrlKeyCode: ctrlBtnPressed = false
+                break
+            case shiftKeyCode: shiftBtnPressed = false
+                break
+            case altKeyCode: altBtnPressed = false
+                break
+            case actionkeyPressedCode: actionkeyPressedCode = false
+                break
+        }
+        clearCommands()
+    } catch (e) { console.error('Error on keyup:', e) }
 }
 
 const initListeners = () => {
