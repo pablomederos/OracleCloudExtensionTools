@@ -1,23 +1,23 @@
 ; (async function () {
-    'use strict';
+    'use strict'
 
-    const settings = await chrome.storage.local.get(['feature_azure_devops', 'feature_experimental_features']);
+    const settings = await chrome.storage.local.get(['feature_azure_devops', 'feature_experimental_features'])
     const featureFlags = {
         azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true',
         experimentalFeatures: settings.feature_experimental_features === true || settings.feature_experimental_features === 'true',
         extensionBaseUrl: chrome.runtime.getURL('')
-    };
+    }
 
-    const configScript = document.createElement('script');
-    configScript.src = chrome.runtime.getURL('config.js');
-    (document.head || document.documentElement).appendChild(configScript);
+    const configScript = document.createElement('script')
+    configScript.src = chrome.runtime.getURL('config.js')
+    ;(document.head || document.documentElement).appendChild(configScript)
 
     configScript.onload = () => {
         window.postMessage({
             type: 'ORACLE_TOOLS_CONFIG',
             config: featureFlags
-        }, '*');
-    };
+        }, '*')
+    }
 
     const moduleFiles = [
         'src/styles/dialog.js',
@@ -25,12 +25,12 @@
         'src/tasks/azure-devops-api.js',
         'src/tasks/azure-devops-dialog.js',
         'src/app.js'
-    ];
+    ]
 
     moduleFiles.forEach(file => {
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.src = chrome.runtime.getURL(file);
-        (document.head || document.documentElement).appendChild(script);
-    });
-})();
+        const script = document.createElement('script')
+        script.type = 'module'
+        script.src = chrome.runtime.getURL(file)
+        ;(document.head || document.documentElement).appendChild(script)
+    })
+})()

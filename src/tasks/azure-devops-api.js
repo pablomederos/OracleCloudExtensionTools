@@ -68,8 +68,10 @@ export const fetchTaskIds = async (startDate, endDate, username) => {
     }
 }
 
+const isEmpty = (ids) => !ids || ids.length === 0
+
 export const fetchWorkItemDetails = async (ids) => {
-    if (!ids || ids.length === 0) return []
+    if (isEmpty(ids)) return []
 
     const fields = [
         FIELD_KEYS.ID,

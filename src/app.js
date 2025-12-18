@@ -43,8 +43,6 @@ const isScriptCommand = () => {
     return scriptCommands.includes(keyCombinations)
 }
 
-
-
 const saveTimecard = () => {
     try {
         const commentView = querySelectors.query(querySelectors.commentView)
@@ -85,9 +83,13 @@ const clearCommands = () => {
     resetCommentTrigger()
 }
 
+const isModifierKey = (keyCode) => [ctrlKeyCode, shiftKeyCode, altKeyCode].some(it => it === keyCode)
+
+const isIgnoredElement = (target) => ['control-group'].some(it => target.classList.contains('it'))
+
 const onKeyDown = (ev) => {
     try {
-        if (['control-group'].some(it => ev.target.classList.contains('it'))) return
+        if (isIgnoredElement(ev.target)) return
 
         ctrlBtnPressed = ctrlBtnPressed || ev.ctrlKey
         shiftBtnPressed = shiftBtnPressed || ev.shiftKey
@@ -97,7 +99,7 @@ const onKeyDown = (ev) => {
         if (!shiftKeyCode && ev.shiftKey) shiftKeyCode = ev.keyCode
         if (!altKeyCode && ev.altKey) altKeyCode = ev.keyCode
 
-        if (![ctrlKeyCode, shiftKeyCode, altKeyCode].some(it => it === ev.keyCode))
+        if (!isModifierKey(ev.keyCode))
             actionkeyPressedCode = parseInt(ev.keyCode)
 
         if (isScriptCommand()) {
@@ -130,9 +132,8 @@ const initListeners = () => {
                 initAzureDevOps()
             } catch (error) {
                 console.warn(`Error initializing AzureDevOps (attempt ${attempts + 1}):`, error)
-                if (attempts < 3) {
+                if (attempts < 3)
                     setTimeout(() => tryInit(attempts + 1), 500)
-                }
             }
         }
         tryInit()

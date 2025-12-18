@@ -246,6 +246,9 @@ const updateSortIndicators = () => {
     })
 }
 
+const hasRequiredSettings = (hasToken, hasUsername, hasOrg, hasProject, hasApi) =>
+    hasToken && hasUsername && hasOrg && hasProject && hasApi
+
 const updateSearchButtonState = (dialog) => {
     const searchBtn = querySelectors.queryFrom(dialog, querySelectors.searchBtn)
     const usernameInput = querySelectors.queryFrom(dialog, querySelectors.username)
@@ -255,7 +258,7 @@ const updateSearchButtonState = (dialog) => {
     const hasProject = !!ADO_CONFIG.project
     const hasApi = !!ADO_CONFIG.apiVersion
 
-    searchBtn.disabled = !(hasToken && hasUsername && hasOrg && hasProject && hasApi)
+    searchBtn.disabled = !hasRequiredSettings(hasToken, hasUsername, hasOrg, hasProject, hasApi)
 
     if (searchBtn.disabled) {
         const missing = []
@@ -310,12 +313,9 @@ const loadInitialData = async (dialog) => {
     } else {
         if (!searchBtn.disabled) searchBtn.click()
         else {
-            const hasToken = !!localStorage.getItem(STORAGE_KEYS.LOCAL.TOKEN)
-            const hasOrg = !!ADO_CONFIG.orgUrl
-            const hasProject = !!ADO_CONFIG.project
-            const hasApi = !!ADO_CONFIG.apiVersion
+            const isAdoSetupMissing = () => !hasToken || !hasOrg || !hasProject || !hasApi
 
-            if (!hasToken || !hasOrg || !hasProject || !hasApi) {
+            if (isAdoSetupMissing()) {
                 const settingsTabBtn = querySelectors.queryFrom(dialog, querySelectors.settingsTabBtn)
                 if (settingsTabBtn) settingsTabBtn.click()
             }
