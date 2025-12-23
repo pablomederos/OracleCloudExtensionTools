@@ -89,6 +89,7 @@ const createTasksContent = async (container, dialog) => {
     const addAllButton = querySelectors.queryFrom(container, querySelectors.addAllBtn)
 
     const filterSwitch = container.querySelector('#filterDateSwitch')
+    const showToDoSwitch = querySelectors.queryFrom(container, querySelectors.showToDo)
 
     container.querySelectorAll(querySelectors.sortableTableHeader[0]).forEach(th => {
         th.onclick = () => {
@@ -117,6 +118,13 @@ const createTasksContent = async (container, dialog) => {
 
     filterSwitch.onchange = () => {
         updateFilterStorage()
+    }
+
+    showToDoSwitch.onchange = () => {
+        const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE)
+        if (cachedData) {
+            renderTable(JSON.parse(cachedData))
+        }
     }
 
     startDateInput.onchange = () => {
@@ -335,7 +343,18 @@ const renderTable = (workItems, sortColumn = sortState.column, ascending = sortS
     let lastDate = null
     let useGray = false
 
-    const sortedItems = [...workItems].sort((a, b) => {
+    const dialog = querySelectors.query(querySelectors.devopsDialog)
+    const showToDoSwitch = querySelectors.queryFrom(dialog, querySelectors.showToDo)
+    const showToDo = showToDoSwitch ? showToDoSwitch.checked : false
+
+    const filteredItems = workItems.filter(item => {
+        const state = item.fields[FIELD_KEYS.STATE]
+        if (state === 'To Do') return showToDo
+        if (state === 'In Progress' || state === 'Done') return true
+        return false
+    })
+
+    const sortedItems = [...filteredItems].sort((a, b) => {
         let valA, valB
 
         switch (sortColumn) {

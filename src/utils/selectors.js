@@ -27,6 +27,7 @@ export const querySelectors = {
     startDate: ['#startDate'],
     endDate: ['#endDate'],
     username: ['#username'],
+    showToDo: ['#showToDoSwitch'],
     searchBtn: ['#searchBtn'],
     addAllBtn: ['#addAllBtn'],
     adoOrgUrl: ['#adoOrgUrl'],
