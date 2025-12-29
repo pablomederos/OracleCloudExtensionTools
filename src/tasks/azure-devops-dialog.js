@@ -202,7 +202,22 @@ const createSettingsContent = async (container, dialog) => {
 
     const usernameInput = querySelectors.queryFrom(container, querySelectors.username)
     const tokenInput = querySelectors.queryFrom(container, querySelectors.adoToken)
+    const orgUrlInput = querySelectors.queryFrom(container, querySelectors.adoOrgUrl)
+    const patLink = querySelectors.queryFrom(container, querySelectors.getPatLink)
     const saveSettingsBtn = querySelectors.queryFrom(container, querySelectors.saveSettingsBtn)
+
+    const updatePatLink = () => {
+        const orgUrl = orgUrlInput.value.trim()
+        if (orgUrl) {
+            patLink.href = `${orgUrl.replace(/\/$/, '')}/_usersSettings/tokens`
+            patLink.style.display = 'block'
+        } else {
+            patLink.style.display = 'none'
+        }
+    }
+
+    orgUrlInput.oninput = updatePatLink
+    updatePatLink()
 
     usernameInput.oninput = () => {
         localStorage.setItem(STORAGE_KEYS.LOCAL.USERNAME, usernameInput.value)

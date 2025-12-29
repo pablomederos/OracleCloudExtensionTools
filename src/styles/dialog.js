@@ -80,6 +80,18 @@ export default function addStyles() {
                 border-color: var(--PRIMARY-COLOR);
                 outline: none;
             }
+            .pat-link {
+                font-size: 11px;
+                margin-top: 4px;
+                color: #0078d4;
+                text-decoration: none;
+                width: fit-content;
+                transition: color 0.2s ease-in-out;
+            }
+            .pat-link:hover {
+                color: #005a9e;
+                text-decoration: underline;
+            }
             .btn-primary {
                 background-color: var(--PRIMARY-COLOR);
                 color: white;

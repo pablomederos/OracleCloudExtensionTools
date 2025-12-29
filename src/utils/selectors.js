@@ -35,6 +35,7 @@ export const querySelectors = {
     adoApiVersion: ['#adoApiVersion'],
     adoToken: ['#adoToken'],
     saveSettingsBtn: ['#saveSettingsBtn'],
+    getPatLink: ['#getPatLink'],
 
     headerToolbar: ['oj-toolbar[aria-label="Header Toolbar"]'],
 
