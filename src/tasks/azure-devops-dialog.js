@@ -488,19 +488,21 @@ const addToTimeSheet = (id) => {
 }
 
 const addDevOpsButton = () => {
-    let toolbarButtonsContainer = querySelectors.query(querySelectors.headerToolbar)
-
-    if (toolbarButtonsContainer) {
-        createAndAppendButton(toolbarButtonsContainer)
-    } else {
-        let interval = setInterval(() => {
-            toolbarButtonsContainer = querySelectors.query(querySelectors.headerToolbar)
-            if (toolbarButtonsContainer) {
-                clearInterval(interval)
-                createAndAppendButton(toolbarButtonsContainer)
-            }
-        }, 200)
+    const checkAndInject = () => {
+        const toolbarButtonsContainer = querySelectors.query(querySelectors.headerToolbar)
+        if (toolbarButtonsContainer) {
+            createAndAppendButton(toolbarButtonsContainer)
+            return true
+        }
+        return false
     }
+
+    // Start with interval directly effectively as requested
+    const interval = setInterval(() => {
+        if (checkAndInject()) {
+            clearInterval(interval)
+        }
+    }, 500)
 }
 
 const createAndAppendButton = (container) => {
