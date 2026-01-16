@@ -136,7 +136,29 @@ const initListeners = () => {
                     setTimeout(() => tryInit(attempts + 1), 500)
             }
         }
-        tryInit()
+
+        const handleNavigation = () => {
+            if (window.location.pathname.includes(pages.timecardsPage)) {
+                tryInit()
+            }
+        }
+
+        // History API patching
+        const patchHistoryMethod = (method) => {
+            const original = history[method];
+            history[method] = function (...args) {
+                const result = original.apply(this, args);
+                handleNavigation();
+                return result;
+            };
+        };
+
+        patchHistoryMethod('pushState');
+        patchHistoryMethod('replaceState');
+        window.addEventListener('popstate', handleNavigation);
+
+        // Initial check
+        handleNavigation()
     }
     initCommentTemplates()
 
