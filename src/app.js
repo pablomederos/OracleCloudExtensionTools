@@ -5,6 +5,8 @@ import { querySelectors } from './utils/selectors.js'
 import { getShortcutString } from './config/shortcuts.js'
 
 import { initCommentTemplates } from './tasks/comment-templates.js'
+import { initCommentsFilter } from './tasks/comments-filter.js'
+
 
 try { addStyles() } catch (e) { console.error('Error adding styles:', e) }
 try { removeHeader() } catch (e) { console.error('Error removing header:', e) }
@@ -140,6 +142,7 @@ const initListeners = () => {
         const handleNavigation = () => {
             if (window.location.pathname.includes(pages.timecardsPage)) {
                 tryInit()
+                initCommentsFilter()
             }
         }
 

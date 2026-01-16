@@ -44,6 +44,11 @@ export const querySelectors = {
     contentEditable: ['[contenteditable="true"]'],
     templateBtn: ['.oracle-tools-template-btn'],
 
+    viewCommentsBtn: ['button[aria-label="View Comments"]'],
+    commentsDrawerHeader: ['.oj-sp-general-drawer-template-header-wrapper'],
+    commentItems: ['#currentComments li'],
+    commentDate: ['[slot="tertiary"] div'],
+
     query: (selectorList) => {
         return selectorList.map(it => document.querySelector(it)).find(it => it)
     },
