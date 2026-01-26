@@ -9,7 +9,7 @@ import { initCommentsFilter } from './tasks/comments-filter.js'
 
 
 try { addStyles() } catch (e) { console.error('Error adding styles:', e) }
-try { removeHeader() } catch (e) { console.error('Error removing header:', e) }
+
 
 let ctrlBtnPressed = false
 let ctrlKeyCode = 0
@@ -128,41 +128,46 @@ const onKeyUp = (ev) => {
 }
 
 const initListeners = () => {
-    if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) {
-        const tryInit = (attempts = 0) => {
-            try {
-                initAzureDevOps()
-            } catch (error) {
-                console.warn(`Error initializing AzureDevOps (attempt ${attempts + 1}):`, error)
-                if (attempts < 3)
-                    setTimeout(() => tryInit(attempts + 1), 500)
-            }
+    const handleNavigation = () => {
+        if (window.ORACLE_TOOLS_CONFIG?.hideBanner) {
+            try { removeHeader() } catch (e) { console.error('Error removing header:', e) }
         }
 
-        const handleNavigation = () => {
+        if (window.ORACLE_TOOLS_CONFIG?.azureDevOps) {
             if (window.location.pathname.includes(pages.timecardsPage)) {
-                tryInit()
+                tryInitAzureDevOps()
                 initCommentsFilter()
             }
         }
-
-        // History API patching
-        const patchHistoryMethod = (method) => {
-            const original = history[method];
-            history[method] = function (...args) {
-                const result = original.apply(this, args);
-                handleNavigation();
-                return result;
-            };
-        };
-
-        patchHistoryMethod('pushState');
-        patchHistoryMethod('replaceState');
-        window.addEventListener('popstate', handleNavigation);
-
-        // Initial check
-        handleNavigation()
     }
+
+    const tryInitAzureDevOps = (attempts = 0) => {
+        try {
+            initAzureDevOps()
+        } catch (error) {
+            console.warn(`Error initializing AzureDevOps (attempt ${attempts + 1}):`, error)
+            if (attempts < 3)
+                setTimeout(() => tryInitAzureDevOps(attempts + 1), 500)
+        }
+    }
+
+    // History API patching
+    const patchHistoryMethod = (method) => {
+        const original = history[method];
+        history[method] = function (...args) {
+            const result = original.apply(this, args);
+            handleNavigation();
+            return result;
+        };
+    };
+
+    patchHistoryMethod('pushState');
+    patchHistoryMethod('replaceState');
+    window.addEventListener('popstate', handleNavigation);
+
+    // Initial check
+    handleNavigation()
+
     initCommentTemplates()
 
     document.addEventListener('keydown', onKeyDown)

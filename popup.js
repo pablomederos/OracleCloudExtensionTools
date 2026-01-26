@@ -1,128 +1,133 @@
 import { SHORTCUTS, getShortcutDisplay } from './src/config/shortcuts.js'
 
-;(function () {
-    'use strict'
+    ; (function () {
+        'use strict'
 
-    const FEATURES = {
-        azureDevOps: {
-            id: 'toggle-azure-devops',
-            storageKey: 'feature_azure_devops',
-            defaultValue: false
-        },
-        experimentalFeatures: {
-            id: 'toggle-experimental-features',
-            storageKey: 'feature_experimental_features',
-            defaultValue: false
-        }
-    }
-
-    const loadFeatureStates = async () => {
-        for (const feature of Object.values(FEATURES)) {
-            const toggle = document.getElementById(feature.id)
-            if (toggle) {
-                const result = await chrome.storage.local.get(feature.storageKey)
-                const isEnabled = result[feature.storageKey] === true || result[feature.storageKey] === 'true'
-                toggle.checked = isEnabled
+        const FEATURES = {
+            azureDevOps: {
+                id: 'toggle-azure-devops',
+                storageKey: 'feature_azure_devops',
+                defaultValue: false
+            },
+            hideBanner: {
+                id: 'toggle-hide-banner',
+                storageKey: 'feature_hide_banner',
+                defaultValue: false
+            },
+            experimentalFeatures: {
+                id: 'toggle-experimental-features',
+                storageKey: 'feature_experimental_features',
+                defaultValue: false
             }
         }
-    }
 
-    const saveAllFeatures = async () => {
-        const updates = {}
-        for (const feature of Object.values(FEATURES)) {
-            const toggle = document.getElementById(feature.id)
-            if (toggle) updates[feature.storageKey] = toggle.checked
+        const loadFeatureStates = async () => {
+            for (const feature of Object.values(FEATURES)) {
+                const toggle = document.getElementById(feature.id)
+                if (toggle) {
+                    const result = await chrome.storage.local.get(feature.storageKey)
+                    const isEnabled = result[feature.storageKey] === true || result[feature.storageKey] === 'true'
+                    toggle.checked = isEnabled
+                }
+            }
         }
-        await chrome.storage.local.set(updates)
-    }
 
-    const updateApplyButton = () => {
-        if (!applyBtn) return
-        applyBtn.disabled = !pendingChanges
-        applyBtn.textContent = pendingChanges ? 'Apply Changes' : 'No Changes'
-    }
+        const saveAllFeatures = async () => {
+            const updates = {}
+            for (const feature of Object.values(FEATURES)) {
+                const toggle = document.getElementById(feature.id)
+                if (toggle) updates[feature.storageKey] = toggle.checked
+            }
+            await chrome.storage.local.set(updates)
+        }
 
-    let pendingChanges = false
-    const applyBtn = document.getElementById('apply-btn')
+        const updateApplyButton = () => {
+            if (!applyBtn) return
+            applyBtn.disabled = !pendingChanges
+            applyBtn.textContent = pendingChanges ? 'Apply Changes' : 'No Changes'
+        }
 
-    const populateShortcuts = () => {
-        const shortcutsList = document.querySelector('#shortcuts-page .shortcuts-list')
-        if (!shortcutsList) return
+        let pendingChanges = false
+        const applyBtn = document.getElementById('apply-btn')
 
-        shortcutsList.innerHTML = ''
+        const populateShortcuts = () => {
+            const shortcutsList = document.querySelector('#shortcuts-page .shortcuts-list')
+            if (!shortcutsList) return
 
-        Object.keys(SHORTCUTS).forEach(key => {
-            const shortcut = SHORTCUTS[key]
-            const keys = getShortcutDisplay(key)
+            shortcutsList.innerHTML = ''
 
-            const shortcutItem = document.createElement('div')
-            shortcutItem.className = 'shortcut-item'
+            Object.keys(SHORTCUTS).forEach(key => {
+                const shortcut = SHORTCUTS[key]
+                const keys = getShortcutDisplay(key)
 
-            const shortcutKeys = document.createElement('div')
-            shortcutKeys.className = 'shortcut-keys'
+                const shortcutItem = document.createElement('div')
+                shortcutItem.className = 'shortcut-item'
 
-            keys.forEach((keyName, index) => {
-                const kbd = document.createElement('kbd')
-                kbd.textContent = keyName
-                shortcutKeys.appendChild(kbd)
+                const shortcutKeys = document.createElement('div')
+                shortcutKeys.className = 'shortcut-keys'
 
-                if (index < keys.length - 1)
-                    shortcutKeys.appendChild(document.createTextNode(' + '))
-            })
+                keys.forEach((keyName, index) => {
+                    const kbd = document.createElement('kbd')
+                    kbd.textContent = keyName
+                    shortcutKeys.appendChild(kbd)
 
-            const shortcutDescription = document.createElement('div')
-            shortcutDescription.className = 'shortcut-description'
-            shortcutDescription.textContent = shortcut.label
-
-            shortcutItem.appendChild(shortcutKeys)
-            shortcutItem.appendChild(shortcutDescription)
-            shortcutsList.appendChild(shortcutItem)
-        })
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadFeatureStates()
-        populateShortcuts()
-        updateApplyButton()
-
-        Object.values(FEATURES).forEach(feature => {
-            const toggle = document.getElementById(feature.id)
-            if (toggle)
-                toggle.addEventListener('change', () => {
-                    pendingChanges = true
-                    updateApplyButton()
+                    if (index < keys.length - 1)
+                        shortcutKeys.appendChild(document.createTextNode(' + '))
                 })
-        })
 
-        applyBtn.addEventListener('click', async () => {
-            await saveAllFeatures()
-            pendingChanges = false
+                const shortcutDescription = document.createElement('div')
+                shortcutDescription.className = 'shortcut-description'
+                shortcutDescription.textContent = shortcut.label
+
+                shortcutItem.appendChild(shortcutKeys)
+                shortcutItem.appendChild(shortcutDescription)
+                shortcutsList.appendChild(shortcutItem)
+            })
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFeatureStates()
+            populateShortcuts()
             updateApplyButton()
 
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0]) chrome.tabs.reload(tabs[0].id)
+            Object.values(FEATURES).forEach(feature => {
+                const toggle = document.getElementById(feature.id)
+                if (toggle)
+                    toggle.addEventListener('change', () => {
+                        pendingChanges = true
+                        updateApplyButton()
+                    })
             })
 
-            window.close()
-        })
+            applyBtn.addEventListener('click', async () => {
+                await saveAllFeatures()
+                pendingChanges = false
+                updateApplyButton()
 
-        const shortcutsPage = document.getElementById('shortcuts-page')
-        const viewShortcutsLink = document.getElementById('view-shortcuts-link')
-        const backButton = document.getElementById('back-button')
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs[0]) chrome.tabs.reload(tabs[0].id)
+                })
 
-        viewShortcutsLink.addEventListener('click', (e) => {
-            e.preventDefault()
-            document.querySelector('body > .header').style.display = 'none'
-            document.querySelector('body > .content').style.display = 'none'
-            document.querySelector('body > .footer').style.display = 'none'
-            shortcutsPage.style.display = 'block'
-        })
+                window.close()
+            })
 
-        backButton.addEventListener('click', () => {
-            document.querySelector('body > .header').style.display = 'block'
-            document.querySelector('body > .content').style.display = 'block'
-            document.querySelector('body > .footer').style.display = 'block'
-            shortcutsPage.style.display = 'none'
+            const shortcutsPage = document.getElementById('shortcuts-page')
+            const viewShortcutsLink = document.getElementById('view-shortcuts-link')
+            const backButton = document.getElementById('back-button')
+
+            viewShortcutsLink.addEventListener('click', (e) => {
+                e.preventDefault()
+                document.querySelector('body > .header').style.display = 'none'
+                document.querySelector('body > .content').style.display = 'none'
+                document.querySelector('body > .footer').style.display = 'none'
+                shortcutsPage.style.display = 'block'
+            })
+
+            backButton.addEventListener('click', () => {
+                document.querySelector('body > .header').style.display = 'block'
+                document.querySelector('body > .content').style.display = 'block'
+                document.querySelector('body > .footer').style.display = 'block'
+                shortcutsPage.style.display = 'none'
+            })
         })
-    })
-})()
+    })()

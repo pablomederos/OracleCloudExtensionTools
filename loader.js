@@ -1,16 +1,17 @@
 ; (async function () {
     'use strict'
 
-    const settings = await chrome.storage.local.get(['feature_azure_devops', 'feature_experimental_features'])
+    const settings = await chrome.storage.local.get(['feature_azure_devops', 'feature_experimental_features', 'feature_hide_banner'])
     const featureFlags = {
         azureDevOps: settings.feature_azure_devops === true || settings.feature_azure_devops === 'true',
+        hideBanner: settings.feature_hide_banner === true || settings.feature_hide_banner === 'true',
         experimentalFeatures: settings.feature_experimental_features === true || settings.feature_experimental_features === 'true',
         extensionBaseUrl: chrome.runtime.getURL('')
     }
 
     const configScript = document.createElement('script')
     configScript.src = chrome.runtime.getURL('config.js')
-    ;(document.head || document.documentElement).appendChild(configScript)
+        ; (document.head || document.documentElement).appendChild(configScript)
 
     configScript.onload = () => {
         window.postMessage({
@@ -31,6 +32,6 @@
         const script = document.createElement('script')
         script.type = 'module'
         script.src = chrome.runtime.getURL(file)
-        ;(document.head || document.documentElement).appendChild(script)
+            ; (document.head || document.documentElement).appendChild(script)
     })
 })()
