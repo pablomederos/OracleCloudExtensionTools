@@ -3,7 +3,7 @@ export const querySelectors = {
     saveBtn: ['button[aria-label=Save]'],
     commentView: ['.oj-sp-create-edit-drawer-template-main-container'],
     commentTextarea: ['textarea'],
-    banner: ['div:has(>table[role=presentation])', '.oj-sp-banner-container.oj-sp-banner-layout.oj-private-scale-lg.oj-sp-common-banner-content-layout'],
+    banner: ['div[role=alert]'],
 
     timecardDatagrid: ['#timecard-datagrid'],
     timecardDatagridColumnHeader: ['#timecard-datagrid:columnHeader'],
