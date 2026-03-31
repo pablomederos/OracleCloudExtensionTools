@@ -129,35 +129,17 @@ const injectFilterUI = () => {
     }
 }
 
-const handleViewCommentsClick = () => {
-    // Wait for drawer to open
-    const checkDrawer = setInterval(() => {
-        const header = querySelectors.query(querySelectors.commentsDrawerHeader)
-        if (header) {
-            clearInterval(checkDrawer)
-            injectFilterUI()
-        }
-    }, 500)
-
-    // Safety timeout
-    setTimeout(() => clearInterval(checkDrawer), 10000)
-}
-
 let pollingInterval = null
 
 export const initCommentsFilter = () => {
     // Stop any existing polling
     if (pollingInterval) clearInterval(pollingInterval)
 
-    const pollBtn = () => {
-        const btn = querySelectors.query(querySelectors.viewCommentsBtn)
-        if (btn && !btn.dataset.hasFilterListener) {
-            btn.addEventListener('click', handleViewCommentsClick)
-            btn.dataset.hasFilterListener = 'true'
-            clearInterval(pollingInterval)
+    // Poll directly for the drawer to be open
+    pollingInterval = setInterval(() => {
+        const header = querySelectors.query(querySelectors.commentsDrawerHeader)
+        if (header) {
+            injectFilterUI()
         }
-    }
-
-    // Start polling
-    pollingInterval = setInterval(pollBtn, 1000)
+    }, 500)
 }
