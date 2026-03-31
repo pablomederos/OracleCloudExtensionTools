@@ -34,6 +34,7 @@
                 "src/tasks/azure-devops-dialog.js",
                 "src/tasks/comment-templates.js",
                 "src/tasks/comments-filter.js",
+                "src/styles/comments-filter.js",
                 "src/tasks/templates/index.js",
                 "src/tasks/templates/dialog-structure.html",
                 "src/tasks/templates-dialog.js",
