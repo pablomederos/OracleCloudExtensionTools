@@ -1,6 +1,9 @@
 import { querySelectors } from '../utils/selectors.js'
 import { injectFilterStyles } from '../styles/comments-filter.js'
 
+let currentFilterDay = 'All'
+let wasPanelOpen = false
+
 const FILTER_TEMPLATE = `
 <div class="comments-day-wrapper">
     <button aria-label="Filter Day" aria-expanded="false" aria-haspopup="true" tabindex="0" type="button" class="BaseButtonStyles_styles_base__jvi3ds0 BaseButtonStyles_styles_sizes_sm__jvi3ds2d BaseButtonStyles_styles_variants_outlined_base__jvi3dso BaseButtonStyles_styles_styled__jvi3ds1 BaseButtonStyles_styles_min__jvi3ds6 BaseButtonStyles_styles_styledOutline__jvi3ds2 BaseButtonStyles_styles_variants_outlined_pseudohover__jvi3dsv">
@@ -67,6 +70,7 @@ const createFilterContainer = () => {
         item.onclick = (e) => {
             e.stopPropagation()
             const day = item.dataset.day
+            currentFilterDay = day
             label.textContent = `Day: ${day}`
             menu.style.display = 'none'
             button.setAttribute('aria-expanded', 'false')
@@ -110,12 +114,25 @@ let pollingInterval = null
 export const initCommentsFilter = () => {
     // Stop any existing polling
     if (pollingInterval) clearInterval(pollingInterval)
+    wasPanelOpen = false
 
     // Poll directly for the drawer to be open
     pollingInterval = setInterval(() => {
         const header = querySelectors.query(querySelectors.commentsDrawerHeader)
-        if (header) {
+        const isPanelOpen = header !== null
+
+        if (isPanelOpen && !wasPanelOpen) {
+            // Panel just opened
+            wasPanelOpen = true
             injectFilterUI()
+            
+            // Re-apply the selected filter with a tiny delay to ensure SPA finished rendering list
+            if (currentFilterDay !== 'All') {
+                setTimeout(() => filterComments(currentFilterDay), 50)
+            }
+        } else if (!isPanelOpen && wasPanelOpen) {
+            // Panel just closed
+            wasPanelOpen = false
         }
     }, 500)
 }
