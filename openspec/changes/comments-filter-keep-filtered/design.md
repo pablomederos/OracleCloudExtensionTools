@@ -1,22 +1,23 @@
 ## Context
-When the Oracle Cloud SPA comments sidebar is closed, the main drawer header is hidden, and the comment `<li>` items are destroyed/reset. When reopened, the sidebar is populated with fresh, unfiltered comments. Since our extension uses a polling interval, and our UI filter wrapper persists, the UI filter button persists with its visual state unchanged ("Day: Mon"), but the newly injected comments are no longer filtered.
+
+Oracle Cloud reconstructs the DOM inside the comments panel dynamically. When reopening the previously initialized panel or as it handles lazy loading / scrolling, it renders the raw DOM nodes (comments) without our previously applied CSS classes (`.hidden`). However, our specific node `#commentsDayFilter` remains initialized because it's inserted directly alongside the drawer's header which persists across simple hide/show toggles. The filter retains its state ("Day: Mon"), but the comments do not reflect it.
 
 ## Goals / Non-Goals
+
 **Goals:**
-- Automatically re-apply the previous filter logic when the comments sidebar reveals itself again.
-- Keep the solution lightweight and avoid adding a `MutationObserver` since lazy-loading isn't present.
+- Visually synchronize the actual content of the list with the selected filter dynamically.
+- Implement Option A: Leverage the existing polling interval.
 
 **Non-Goals:**
-- We are not resetting the UI. The user's intent is respected.
+- We are not implementing a `MutationObserver` right now, prioritizing speed, simplicity, and leveraging the existing interval without adding complex lifecycle management hooks.
 
 ## Decisions
 
-**Tracker Variables in Polling:**
-- *Rationale:* Since the extension already checks every 500ms for `commentsDrawerHeader`, we can add a simple state machine: `let wasPanelOpen = false`.
-- If the header is found, but `wasPanelOpen` is false, it means a Open transition occurred. We set it to true and immediately call `filterComments(currentFilterDay)` (which we will track globally).
-- If the header is NOT found, but `wasPanelOpen` is true, we set it to false.
-- *Alternatives Considered:* Re-applying the filter unconditionally every 500ms. Rejected due to wasting CPU cycles by continuously querying and looping through the DOM.
+**1. Re-apply the filter continuously instead of observing mutations**
+- *Rationale:* Since `initCommentsFilter` maintains a `setInterval(..., 500)`, we are already querying the DOM. If our `#commentsDayFilter` element exists, we will simply execute the standard `filterComments()` routine with the internally preserved `currentDayFilter` state string. This applies the filter twice a second over the comments list, hiding newly rendered elements instantaneously and ensuring old ones stay hidden when the panel is reopened.
+- *Alternatives considered:* We discussed implementing a `MutationObserver` on the list wrapper or resetting the filter on close. `MutationObserver` requires DOM lifecycle tracking to disconnect when the panel actually unmounts totally to avoid leaks, and resetting the filter state on unmount creates a bad UX if the user opens and closes panels quickly. Option A provides the most robust state retention.
 
 ## Risks / Trade-offs
-- **Risk:** Timing mismatches. The SPA might inject the new comment items asynchronously slightly *after* the header reappears.
-  **Mitigation:** If this happens, we could add a short delay `setTimeout` or a tiny observer on just that event. However, typically Oracle Cloud renders the drawer contents concurrently, so the synchronous approach via polling should be sufficient.
+
+- **Risk: Re-filtering DOM nodes that are already filtered consumes CPU.** 
+  - *Trade-off:* Iterating over a small subset of DOM elements every 500ms using a `classList.add`/`.remove` operation is extremely lightweight relative to the entire V8 runtime baseline and negligible across modern machines, therefore avoiding the overengineering of `MutationObserver` is a worthwhile trade.

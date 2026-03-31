@@ -1,8 +1,7 @@
 import { querySelectors } from '../utils/selectors.js'
 import { injectFilterStyles } from '../styles/comments-filter.js'
 
-let currentFilterDay = 'All'
-let wasPanelOpen = false
+let currentDayFilter = 'All'
 
 const FILTER_TEMPLATE = `
 <div class="comments-day-wrapper">
@@ -70,7 +69,7 @@ const createFilterContainer = () => {
         item.onclick = (e) => {
             e.stopPropagation()
             const day = item.dataset.day
-            currentFilterDay = day
+            currentDayFilter = day
             label.textContent = `Day: ${day}`
             menu.style.display = 'none'
             button.setAttribute('aria-expanded', 'false')
@@ -101,7 +100,10 @@ const filterComments = (day) => {
 
 const injectFilterUI = () => {
     // Check if already injected
-    if (document.getElementById('commentsDayFilter')) return
+    if (document.getElementById('commentsDayFilter')) {
+        filterComments(currentDayFilter)
+        return
+    }
 
     const header = querySelectors.query(querySelectors.commentsDrawerHeader)
     if (header) {
@@ -114,25 +116,12 @@ let pollingInterval = null
 export const initCommentsFilter = () => {
     // Stop any existing polling
     if (pollingInterval) clearInterval(pollingInterval)
-    wasPanelOpen = false
 
     // Poll directly for the drawer to be open
     pollingInterval = setInterval(() => {
         const header = querySelectors.query(querySelectors.commentsDrawerHeader)
-        const isPanelOpen = header !== null
-
-        if (isPanelOpen && !wasPanelOpen) {
-            // Panel just opened
-            wasPanelOpen = true
+        if (header) {
             injectFilterUI()
-            
-            // Re-apply the selected filter with a tiny delay to ensure SPA finished rendering list
-            if (currentFilterDay !== 'All') {
-                setTimeout(() => filterComments(currentFilterDay), 50)
-            }
-        } else if (!isPanelOpen && wasPanelOpen) {
-            // Panel just closed
-            wasPanelOpen = false
         }
     }, 500)
 }

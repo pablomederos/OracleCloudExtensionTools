@@ -1,11 +1,12 @@
-## 1. Implement State Variables
+## 1. Setup
 
-- [x] 1.1 Add a module-level `currentFilterDay` variable to `src/tasks/comments-filter.js` (defaulting to `'All'`)
-- [x] 1.2 Modify `createFilterContainer` so clicks on `menuItems` update the `currentFilterDay` variable
-- [x] 1.3 Add a module-level `wasPanelOpen` variable inside or alongside `initCommentsFilter` to track panel state
+- [x] 1.1 Declare a module-scoped variable `let currentDayFilter = 'All'` in `src/tasks/comments-filter.js` to track the current state.
 
-## 2. Re-apply Filter Mechanism
+## 2. Core Implementation
+- [x] 2.1 Update the `item.onclick` function inside `createFilterContainer()` to store the selected day to `currentDayFilter` every time a user changes the filter.
+- [x] 2.2 Modify `injectFilterUI()` so instead of simply returning `if (document.getElementById('commentsDayFilter'))`, it invokes `filterComments(currentDayFilter)` before returning early, reapplying the active filter immediately when polled by the 500ms heartbeat.
 
-- [x] 2.1 Update the `pollingInterval` loop to detect when the panel transitions from closed `(!wasPanelOpen)` to open 
-- [x] 2.2 Trigger `filterComments(currentFilterDay)` when the panel opens to synchronize the fresh comments with the existing filter state
-- [x] 2.3 Add logic into the loop to revert `wasPanelOpen` back to `false` when the panel is no longer found
+## 3. Hydration & Testing
+
+- [x] 3.1 Verify closing the comments panel and reopening retains the selected day on the button and successfully refilters the SPA's reconstructed DOM nodes.
+- [x] 3.2 Ensure scrolling down (which triggers SPA lazy-loading of newer comments) correctly hides them according to the retained filter.
