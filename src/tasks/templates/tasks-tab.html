@@ -23,8 +23,14 @@
             <span class="slider"></span>
         </label>
     </div>
-    <div class="control-group flex-actions" style="display: flex; align-items: flex-end; gap: 5px; margin-bottom: 0;">
+    <div class="control-group"
+        style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0 5px;">
+        <label for="filterPopoverBtn" style="font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">Filter</label>
         <button id="filterPopoverBtn" class="btn-secondary" style="padding: 5px; min-width: 30px; height: 32px;" popovertarget="localFilterPopover" title="Local Filters">🔎</button>
+    </div>
+    <div class="control-group"
+        style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0 5px;">
+        <label for="clearFilterBtn" style="font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">Clear</label>
         <button id="clearFilterBtn" class="btn-secondary" style="padding: 5px; min-width: 30px; height: 32px; opacity: 0.5;" title="Clear Filters" disabled>🧹</button>
     </div>
     <button id="searchBtn" class="btn-primary" style="align-self: end; margin-left: 5px;" disabled>Search</button>
