@@ -78,12 +78,12 @@ const renderTemplatesList = (dialog) => {
     templates.forEach((template, index) => {
         const item = document.createElement('div')
         item.style.padding = '10px'
-        item.style.borderBottom = '1px solid #eee'
+        item.style.borderBottom = '1px solid var(--color-neutral-mid)'
         item.style.cursor = 'pointer'
         item.style.display = 'flex'
         item.style.justifyContent = 'space-between'
         item.style.alignItems = 'center'
-        item.onmouseenter = () => item.style.backgroundColor = '#f9f9f9'
+        item.onmouseenter = () => item.style.backgroundColor = 'var(--color-neutral-light)'
         item.onmouseleave = () => item.style.backgroundColor = 'transparent'
 
         const titleSpan = document.createElement('span')
@@ -108,7 +108,7 @@ const renderTemplatesList = (dialog) => {
         deleteBtn.textContent = '🗑️'
         deleteBtn.title = 'Delete'
         deleteBtn.className = 'action-btn'
-        deleteBtn.style.color = '#d9534f'
+        deleteBtn.style.color = 'var(--color-semantic-error)'
         deleteBtn.onclick = (e) => {
             e.stopPropagation()
             if (confirm('Delete this template?')) {

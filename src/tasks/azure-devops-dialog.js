@@ -43,7 +43,7 @@ export const createDevopsDialog = async () => {
 
     tasksTabBtn.onclick = () => {
         tasksTabBtn.classList.add('active')
-        tasksTabBtn.style.borderBottom = '2px solid #0078d4'
+        tasksTabBtn.style.borderBottom = '2px solid var(--color-primary)'
         tasksTabBtn.style.fontWeight = 'bold'
 
         settingsTabBtn.classList.remove('active')
@@ -56,7 +56,7 @@ export const createDevopsDialog = async () => {
 
     settingsTabBtn.onclick = () => {
         settingsTabBtn.classList.add('active')
-        settingsTabBtn.style.borderBottom = '2px solid #0078d4'
+        settingsTabBtn.style.borderBottom = '2px solid var(--color-primary)'
         settingsTabBtn.style.fontWeight = 'bold'
 
         tasksTabBtn.classList.remove('active')
