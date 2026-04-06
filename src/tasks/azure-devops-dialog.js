@@ -103,6 +103,50 @@ const createTasksContent = async (container, dialog) => {
         }
     })
 
+    const localFilterId = container.querySelector('#localFilterId')
+    const localFilterTitle = container.querySelector('#localFilterTitle')
+    const localFilterDate = container.querySelector('#localFilterDate')
+    const localFilterStatus = container.querySelector('#localFilterStatus')
+    const filterPopoverBtn = container.querySelector('#filterPopoverBtn')
+    const clearFilterBtn = container.querySelector('#clearFilterBtn')
+
+    const syncDateBounds = () => {
+        if (localFilterDate) {
+            localFilterDate.min = startDateInput.value
+            localFilterDate.max = endDateInput.value
+        }
+    }
+    syncDateBounds()
+
+    let filterDebounce;
+    const triggerLocalFilter = () => {
+        clearTimeout(filterDebounce)
+        filterDebounce = setTimeout(() => {
+            const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE)
+            if (cachedData) {
+                renderTable(JSON.parse(cachedData))
+            }
+            
+            const hasActiveFilters = localFilterId.value || localFilterTitle.value || localFilterDate.value || localFilterStatus.value
+            clearFilterBtn.disabled = !hasActiveFilters
+            clearFilterBtn.style.opacity = hasActiveFilters ? '1' : '0.5'
+        }, 300)
+    }
+
+    [localFilterId, localFilterTitle, localFilterDate, localFilterStatus].forEach(input => {
+        if(input) input.addEventListener('input', triggerLocalFilter)
+    })
+
+    if(clearFilterBtn) {
+        clearFilterBtn.onclick = () => {
+            localFilterId.value = ''
+            localFilterTitle.value = ''
+            localFilterDate.value = ''
+            localFilterStatus.value = ''
+            triggerLocalFilter()
+        }
+    }
+
     const updateFilterStorage = () => {
         if (filterSwitch.checked) {
             localStorage.setItem(STORAGE_KEYS.LOCAL.FILTER_ENABLED, 'true')
@@ -128,10 +172,12 @@ const createTasksContent = async (container, dialog) => {
     }
 
     startDateInput.onchange = () => {
+        syncDateBounds()
         if (filterSwitch.checked) updateFilterStorage()
     }
 
     endDateInput.onchange = () => {
+        syncDateBounds()
         if (filterSwitch.checked) updateFilterStorage()
     }
 
@@ -362,11 +408,54 @@ const renderTable = (workItems, sortColumn = sortState.column, ascending = sortS
     const showToDoSwitch = querySelectors.queryFrom(dialog, querySelectors.showToDo)
     const showToDo = showToDoSwitch ? showToDoSwitch.checked : false
 
+    const localFilterStatusNode = document.getElementById('localFilterStatus')
+    if (localFilterStatusNode && workItems.length > 0) {
+        const currentOptions = Array.from(localFilterStatusNode.options).map(o => o.value)
+        const uniqueStatuses = [...new Set(workItems.map(item => item.fields[FIELD_KEYS.STATE]))].sort()
+        
+        if (uniqueStatuses.some(s => !currentOptions.includes(s)) || currentOptions.length - 1 !== uniqueStatuses.length) {
+            const currentValue = localFilterStatusNode.value
+            localFilterStatusNode.innerHTML = '<option value="">All</option>'
+            uniqueStatuses.forEach(status => {
+                const opt = document.createElement('option')
+                opt.value = status
+                opt.textContent = status
+                localFilterStatusNode.appendChild(opt)
+            })
+            if (uniqueStatuses.includes(currentValue)) {
+                localFilterStatusNode.value = currentValue
+            }
+        }
+    }
+
+    const localFilterIdVal = (document.getElementById('localFilterId')?.value || '').toLowerCase()
+    const localFilterTitleVal = (document.getElementById('localFilterTitle')?.value || '').toLowerCase()
+    const localFilterDateVal = document.getElementById('localFilterDate')?.value || ''
+    const localFilterStatusVal = (document.getElementById('localFilterStatus')?.value || '').toLowerCase()
+
     const filteredItems = workItems.filter(item => {
-        const state = item.fields[FIELD_KEYS.STATE]
-        if (state === 'To Do') return showToDo
-        if (state === 'In Progress' || state === 'Done') return true
-        return false
+        const state = item.fields[FIELD_KEYS.STATE] || ''
+        const idStr = String(item.fields[FIELD_KEYS.ID] || '')
+        const titleStr = item.fields[FIELD_KEYS.TITLE] || ''
+        
+        let changedDateStr = ''
+        if (item.fields[FIELD_KEYS.CHANGED_DATE]) {
+            changedDateStr = new Date(item.fields[FIELD_KEYS.CHANGED_DATE]).toISOString().split('T')[0]
+        }
+
+        let passesToDo = false
+        if (state === 'To Do') passesToDo = showToDo
+        else if (state === 'In Progress' || state === 'Done') passesToDo = true
+        else passesToDo = true
+
+        if (!passesToDo) return false;
+
+        if (localFilterIdVal && !idStr.toLowerCase().includes(localFilterIdVal)) return false;
+        if (localFilterTitleVal && !titleStr.toLowerCase().includes(localFilterTitleVal)) return false;
+        if (localFilterDateVal && changedDateStr !== localFilterDateVal) return false;
+        if (localFilterStatusVal && state.toLowerCase() !== localFilterStatusVal) return false;
+
+        return true;
     })
 
     const sortedItems = [...filteredItems].sort((a, b) => {
@@ -422,10 +511,20 @@ const renderTable = (workItems, sortColumn = sortState.column, ascending = sortS
             tr.classList.add('task-row-alt')
         }
 
-        const cells = [id, title, date, status, estimate]
-        cells.forEach(text => {
+        let highlightedTitle = title
+        if (localFilterTitleVal) {
+            const regex = new RegExp(`(${localFilterTitleVal})`, 'gi')
+            highlightedTitle = title.replace(regex, '<mark>$1</mark>')
+        }
+
+        const cells = [id, highlightedTitle, date, status, estimate]
+        cells.forEach((text, i) => {
             const td = document.createElement('td')
-            td.textContent = text
+            if (i === 1) {
+                td.innerHTML = String(text)
+            } else {
+                td.textContent = text
+            }
             tr.appendChild(td)
         })
 

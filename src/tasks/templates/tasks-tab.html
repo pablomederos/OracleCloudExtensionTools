@@ -24,6 +24,30 @@
         </label>
     </div>
     <button id="searchBtn" class="btn-primary" style="align-self: end;" disabled>Search</button>
+    <button id="filterPopoverBtn" class="btn-secondary" style="align-self: end; padding: 5px; min-width: 30px; margin-left: 5px;" popovertarget="localFilterPopover" title="Local Filters">🔎</button>
+    <button id="clearFilterBtn" class="btn-secondary" style="align-self: end; padding: 5px; min-width: 30px; margin-left: 5px; opacity: 0.5;" title="Clear Filters" disabled>🧹</button>
+</div>
+
+<div id="localFilterPopover" popover style="padding: 15px; border-radius: 8px; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: white;">
+    <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;">Local Filters</div>
+    <div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
+        <label for="localFilterId" style="font-size: 12px; margin-bottom: 2px;">Task ID</label>
+        <input type="text" id="localFilterId" placeholder="e.g. 1234" style="padding: 4px; font-size: 12px;">
+    </div>
+    <div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
+        <label for="localFilterTitle" style="font-size: 12px; margin-bottom: 2px;">Title</label>
+        <input type="text" id="localFilterTitle" placeholder="Substring match" style="padding: 4px; font-size: 12px;">
+    </div>
+    <div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
+        <label for="localFilterDate" style="font-size: 12px; margin-bottom: 2px;">Changed Date</label>
+        <input type="date" id="localFilterDate" style="padding: 4px; font-size: 12px;">
+    </div>
+    <div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
+        <label for="localFilterStatus" style="font-size: 12px; margin-bottom: 2px;">Status</label>
+        <select id="localFilterStatus" style="padding: 4px; font-size: 12px;">
+            <option value="">All</option>
+        </select>
+    </div>
 </div>
 
 <div class="tasks-table-container">
