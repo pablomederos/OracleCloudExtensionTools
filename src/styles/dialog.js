@@ -52,7 +52,7 @@ export default function addStyles() {
             }
             .controls {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
                 gap: 15px;
                 margin-bottom: 20px;
                 background: #f8f9fa;
