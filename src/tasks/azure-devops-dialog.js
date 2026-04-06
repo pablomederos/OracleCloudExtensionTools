@@ -369,6 +369,12 @@ const loadInitialData = async (dialog) => {
         }
     }
 
+    const localFilterDate = dialog.querySelector('#localFilterDate')
+    if (localFilterDate) {
+        localFilterDate.min = startDateInput.value
+        localFilterDate.max = endDateInput.value
+    }
+
     const storedUsername = localStorage.getItem(STORAGE_KEYS.LOCAL.USERNAME)
     if (storedUsername) {
         usernameInput.value = storedUsername
