@@ -16,8 +16,8 @@ The extension fetches Azure DevOps tasks and displays them in a table based on u
 
 ## Decisions
 
-- **Popover API Structure**: We chose the native HTML `popover` attribute to show/hide the advanced filters. This prevents us from writing boilerplate JavaScript for tracking outside-clicks and absolute positioning logic.
-- **Trigger Icons**: We decided on the magnifying glass emoji (`🔎`) for showing the popover, and the broom emoji (`🧹`) for clearing filters. They will be placed near the "Show To Do" toggle within the generic control container.
+- **Popover API Structure**: We chose the native HTML `popover` attribute to show/hide the advanced filters. This prevents us from writing boilerplate JavaScript for tracking outside-clicks and absolute positioning logic. The fields within the popover will be displayed horizontally instead of vertically to save vertical space.
+- **Trigger Icons**: We decided on the magnifying glass emoji (`🔎`) for showing the popover, and the broom emoji (`🧹`) for clearing filters. They will be placed together with the "Save Filter" and "Show To Do" toggles, just before the "Search" button, fitting properly by scaling down the toggles.
 - **Dynamic Status Select**: The Status filter will be an HTML `<select>` element. Its options will be dynamically populated based on the distinct status states found in the currently loaded `workItems`, preventing invalid free-text searches.
 - **Match Highlighting**: When the user types in the Title filter, matching substring portions within the task titles will be visually highlighted in the results table rendering using `<mark>` tags or specific CSS highlighting (`::target-text` included as CSS characteristic).
 - **Debounced Input**: Instead of forcing the user to press a secondary "Search" button for the popup filter, we will bind `input` events with a ~300ms debounce to automatically trigger `renderTable()` with active filters.
