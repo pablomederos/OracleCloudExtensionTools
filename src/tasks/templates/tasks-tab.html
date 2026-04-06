@@ -9,8 +9,7 @@
     </div>
     <div class="control-group"
         style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0 5px;">
-        <label for="filterDateSwitch" style="font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">Save
-            Filter</label>
+        <label for="filterDateSwitch" style="font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">Save Filter</label>
         <label class="switch" style="transform: scale(0.8); transform-origin: top;">
             <input type="checkbox" id="filterDateSwitch">
             <span class="slider"></span>
@@ -18,30 +17,41 @@
     </div>
     <div class="control-group"
         style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0 5px;">
-        <label for="showToDoSwitch" style="font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">Show To
-            Do</label>
+        <label for="showToDoSwitch" style="font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">Show To Do</label>
         <label class="switch" style="transform: scale(0.8); transform-origin: top;">
             <input type="checkbox" id="showToDoSwitch">
             <span class="slider"></span>
         </label>
     </div>
-    <label for="localFilterId" style="font-size: 12px; margin-bottom: 2px;">Task ID</label>
-    <input type="text" id="localFilterId" placeholder="e.g. 1234" style="padding: 4px; font-size: 12px;">
+    <div class="control-group flex-actions" style="display: flex; align-items: flex-end; gap: 5px; margin-bottom: 0;">
+        <button id="filterPopoverBtn" class="btn-secondary" style="padding: 5px; min-width: 30px; height: 32px;" popovertarget="localFilterPopover" title="Local Filters">🔎</button>
+        <button id="clearFilterBtn" class="btn-secondary" style="padding: 5px; min-width: 30px; height: 32px; opacity: 0.5;" title="Clear Filters" disabled>🧹</button>
+    </div>
+    <button id="searchBtn" class="btn-primary" style="align-self: end; margin-left: 5px;" disabled>Search</button>
 </div>
-<div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
-    <label for="localFilterTitle" style="font-size: 12px; margin-bottom: 2px;">Title</label>
-    <input type="text" id="localFilterTitle" placeholder="Substring match" style="padding: 4px; font-size: 12px;">
-</div>
-<div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
-    <label for="localFilterDate" style="font-size: 12px; margin-bottom: 2px;">Changed Date</label>
-    <input type="date" id="localFilterDate" style="padding: 4px; font-size: 12px;">
-</div>
-<div class="control-group" style="margin-bottom: 5px; display: flex; flex-direction: column;">
-    <label for="localFilterStatus" style="font-size: 12px; margin-bottom: 2px;">Status</label>
-    <select id="localFilterStatus" style="padding: 4px; font-size: 12px;">
-        <option value="">All</option>
-    </select>
-</div>
+
+<div id="localFilterPopover" popover style="padding: 15px; border-radius: 8px; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: white; margin: auto;">
+    <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px; width: 100%;">Local Filters</div>
+    <div style="display: flex; gap: 15px; flex-direction: row; flex-wrap: wrap;">
+        <div class="control-group" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <label for="localFilterId" style="font-size: 12px; margin-bottom: 2px;">Task ID</label>
+            <input type="text" id="localFilterId" placeholder="e.g. 1234" style="padding: 4px; font-size: 12px; width: 80px;">
+        </div>
+        <div class="control-group" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <label for="localFilterTitle" style="font-size: 12px; margin-bottom: 2px;">Title</label>
+            <input type="text" id="localFilterTitle" placeholder="Substring match" style="padding: 4px; font-size: 12px; width: 160px;">
+        </div>
+        <div class="control-group" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <label for="localFilterDate" style="font-size: 12px; margin-bottom: 2px;">Changed Date</label>
+            <input type="date" id="localFilterDate" style="padding: 4px; font-size: 12px; width: 120px;">
+        </div>
+        <div class="control-group" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <label for="localFilterStatus" style="font-size: 12px; margin-bottom: 2px;">Status</label>
+            <select id="localFilterStatus" style="padding: 4px; font-size: 12px; width: 110px;">
+                <option value="">All</option>
+            </select>
+        </div>
+    </div>
 </div>
 
 <div class="tasks-table-container">
@@ -50,11 +60,9 @@
             <tr>
                 <th data-column="id" style="cursor: pointer; user-select: none;" title="Click to sort">Task ID</th>
                 <th data-column="title" style="cursor: pointer; user-select: none;" title="Click to sort">Title</th>
-                <th data-column="date" style="cursor: pointer; user-select: none;" title="Click to sort">Changed Date
-                </th>
+                <th data-column="date" style="cursor: pointer; user-select: none;" title="Click to sort">Changed Date</th>
                 <th data-column="status" style="cursor: pointer; user-select: none;" title="Click to sort">Status</th>
-                <th data-column="estimate" style="cursor: pointer; user-select: none;" title="Click to sort">Original
-                    Estimate</th>
+                <th data-column="estimate" style="cursor: pointer; user-select: none;" title="Click to sort">Original Estimate</th>
                 <th>Action</th>
             </tr>
         </thead>
