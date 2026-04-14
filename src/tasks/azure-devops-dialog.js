@@ -465,36 +465,36 @@ const renderTable = (workItems, sortColumn = sortState.column, ascending = sortS
     })
 
     const sortedItems = [...filteredItems].sort((a, b) => {
-        let valA, valB
+        let leftValue, rightValue
 
         switch (sortColumn) {
             case 'id':
-                valA = a.fields[FIELD_KEYS.ID]
-                valB = b.fields[FIELD_KEYS.ID]
+                leftValue = a.fields[FIELD_KEYS.ID]
+                rightValue = b.fields[FIELD_KEYS.ID]
                 break
             case 'title':
-                valA = a.fields[FIELD_KEYS.TITLE].toLowerCase()
-                valB = b.fields[FIELD_KEYS.TITLE].toLowerCase()
+                leftValue = a.fields[FIELD_KEYS.TITLE].toLowerCase()
+                rightValue = b.fields[FIELD_KEYS.TITLE].toLowerCase()
                 break
             case 'date':
-                valA = new Date(a.fields[FIELD_KEYS.CHANGED_DATE])
-                valB = new Date(b.fields[FIELD_KEYS.CHANGED_DATE])
+                leftValue = new Date(a.fields[FIELD_KEYS.CHANGED_DATE])
+                rightValue = new Date(b.fields[FIELD_KEYS.CHANGED_DATE])
                 break
             case 'status':
-                valA = a.fields[FIELD_KEYS.STATE].toLowerCase()
-                valB = b.fields[FIELD_KEYS.STATE].toLowerCase()
+                leftValue = a.fields[FIELD_KEYS.STATE].toLowerCase()
+                rightValue = b.fields[FIELD_KEYS.STATE].toLowerCase()
                 break
             case 'estimate':
-                valA = a.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || 0
-                valB = b.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || 0
+                leftValue = a.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || 0
+                rightValue = b.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || 0
                 break
             default:
-                valA = new Date(a.fields[FIELD_KEYS.CHANGED_DATE])
-                valB = new Date(a.fields[FIELD_KEYS.CHANGED_DATE])
+                leftValue = new Date(a.fields[FIELD_KEYS.CHANGED_DATE])
+                rightValue = new Date(a.fields[FIELD_KEYS.CHANGED_DATE])
         }
 
-        if (valA < valB) return ascending ? -1 : 1
-        if (valA > valB) return ascending ? 1 : -1
+        if (leftValue < rightValue) return ascending ? -1 : 1
+        if (leftValue > rightValue) return ascending ? 1 : -1
         return 0
     })
 
