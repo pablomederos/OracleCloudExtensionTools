@@ -324,7 +324,7 @@ const loadInitialData = async (dialog) => {
 }
 
 const renderTable = (workItems, sortColumn = sortState.column, ascending = sortState.ascending) => {
-    const tbody = document.getElementById(querySelectors.tasksBody[0].replace('#', ''))
+    const tbody = document.querySelector(querySelectors.tasksBody[0])
     tbody.innerHTML = ''
 
     sortState.column = sortColumn

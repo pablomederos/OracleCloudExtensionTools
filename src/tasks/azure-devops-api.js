@@ -1,6 +1,7 @@
 const FIELD_KEYS = {
     ID: 'System.Id',
     TITLE: 'System.Title',
+    DESCRIPTION: 'System.Description',
     CHANGED_DATE: 'System.ChangedDate',
     STATE: 'System.State',
     WORK_ITEM_TYPE: 'System.WorkItemType',
@@ -70,12 +71,45 @@ export const fetchTaskIds = async (startDate, endDate, username) => {
 
 const isEmpty = (ids) => !ids || ids.length === 0
 
+const fetchWorkItemComments = async (workItemId) => {
+    const authHeader = getAuthHeader()
+    if (!authHeader) return []
+
+    const url = `${ADO_CONFIG.orgUrl}/${ADO_CONFIG.project}/_apis/wit/workItems/${workItemId}/comments?api-version=${ADO_CONFIG.apiVersion}&$top=2`
+
+    try {
+        const response = await fetch(url, {
+            headers: authHeader
+        })
+
+        if (!response.ok) {
+            const text = await response.text()
+            console.error(`Comments Error for work item ${workItemId}:`, response.status, response.statusText, text)
+            return []
+        }
+
+        const data = await response.json()
+        const comments = Array.isArray(data.comments) ? data.comments.slice(0, 2) : []
+
+        return comments.map(comment => ({
+            id: comment.id,
+            text: comment.text || '',
+            revisedBy: comment.revisedBy || null,
+            revisedDate: comment.revisedDate || null
+        }))
+    } catch (error) {
+        console.error(`Error fetching comments for work item ${workItemId}:`, error)
+        return []
+    }
+}
+
 export const fetchWorkItemDetails = async (ids) => {
     if (isEmpty(ids)) return []
 
     const fields = [
         FIELD_KEYS.ID,
         FIELD_KEYS.TITLE,
+        FIELD_KEYS.DESCRIPTION,
         FIELD_KEYS.CHANGED_DATE,
         FIELD_KEYS.STATE,
         FIELD_KEYS.ORIGINAL_ESTIMATE
@@ -91,7 +125,15 @@ export const fetchWorkItemDetails = async (ids) => {
         if (!response.ok) throw new Error(`Details Error: ${response.statusText}`)
 
         const data = await response.json()
-        return data.value
+        const workItems = Array.isArray(data.value) ? data.value : []
+
+        return await Promise.all(workItems.map(async (item) => {
+            const comments = await fetchWorkItemComments(item.id)
+            return {
+                ...item,
+                comments
+            }
+        }))
     } catch (error) {
         console.error('Error fetching details:', error)
         return []
