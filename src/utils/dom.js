@@ -1,4 +1,5 @@
 import { querySelectors } from './selectors.js'
+import { FIELD_KEYS } from './constants.js'
 
 export const removeHeader = () => {
     const bannerCheckIntervalMs = 200
@@ -149,8 +150,43 @@ const openInsertCommentWindow = (querySelectors) => {
     }, 200)
 }
 
-export const populateCommentTextarea = (taskId, taskTitle) => {
-    const commentText = `${taskId}: ${taskTitle}`
+const normalizeText = (value) => {
+    if (typeof value !== 'string') return ''
+
+    return value.replace(/<[^>]*>/g, '').replace(/\r\n/g, '\n').trim()
+}
+
+const buildCommentText = (task) => {
+    const taskId = task?.fields?.[FIELD_KEYS.ID] || task?.id || ''
+    const taskTitle = task?.fields?.[FIELD_KEYS.TITLE] || task?.title || ''
+    const description = normalizeText(task?.fields?.[FIELD_KEYS.DESCRIPTION] || '')
+    const comments = Array.isArray(task?.comments)
+        ? task.comments
+            .map(comment => normalizeText(comment?.text || ''))
+            .filter(Boolean)
+        : []
+
+    const sections = []
+
+    if (taskId && taskTitle) {
+        sections.push(`${taskId}: ${taskTitle}`)
+    } else if (taskId) {
+        sections.push(String(taskId))
+    }
+
+    if (description) {
+        sections.push(`Description:\n${description}`)
+    }
+
+    if (comments.length) {
+        sections.push(`Comments:\n${comments.map((comment, index) => `${index + 1}. ${comment}`).join('\n')}`)
+    }
+
+    return sections.join('\n\n')
+}
+
+export const populateCommentTextarea = (task) => {
+    const commentText = buildCommentText(task)
 
     return new Promise((resolve) => {
         const tryPopulate = (attempts = 0) => {

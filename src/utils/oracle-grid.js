@@ -57,21 +57,19 @@ export const findFirstEmptyCellByDate = (isoDateString) => {
 export const processTaskInsertion = (task) => {
     const taskDate = task.fields[FIELD_KEYS.CHANGED_DATE]
     const originalEstimate = task.fields[FIELD_KEYS.ORIGINAL_ESTIMATE] || ''
-    const taskId = task.fields[FIELD_KEYS.ID]
-    const taskTitle = task.fields[FIELD_KEYS.TITLE]
 
     setTimeout(() => {
         const emptyCell = findFirstEmptyCellByDate(taskDate)
 
-        if (emptyCell) handleCellActivation(emptyCell, originalEstimate, taskId, taskTitle, taskDate)
+        if (emptyCell) handleCellActivation(emptyCell, originalEstimate, task, taskDate)
     }, 300)
 }
 
-const handleCellActivation = async (emptyCell, value, taskId, taskTitle, taskDate) => {
+const handleCellActivation = async (emptyCell, value, task, taskDate) => {
     createCommentCommand(emptyCell)
 
     setTimeout(async () => {
-        const commentAdded = await populateCommentTextarea(taskId, taskTitle)
+        const commentAdded = await populateCommentTextarea(task)
 
         if (commentAdded) {
             const commentView = querySelectors.query(querySelectors.commentView)
