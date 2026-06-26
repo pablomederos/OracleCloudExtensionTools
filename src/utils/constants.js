@@ -58,6 +58,7 @@ export const BUTTON_CONFIG = {
 export const FIELD_KEYS = {
     ID: 'System.Id',
     TITLE: 'System.Title',
+    DESCRIPTION: 'System.Description',
     CHANGED_DATE: 'System.ChangedDate',
     STATE: 'System.State',
     ORIGINAL_ESTIMATE: 'Microsoft.VSTS.Scheduling.OriginalEstimate'

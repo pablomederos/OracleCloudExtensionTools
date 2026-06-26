@@ -1,5 +1,5 @@
 import { querySelectors } from '../utils/selectors.js'
-import { STORAGE_KEYS, BUTTON_CLASSES } from '../utils/constants.js'
+import { STORAGE_KEYS, BUTTON_CLASSES, FIELD_KEYS } from '../utils/constants.js'
 import { getTemplatesDialogTemplate } from './templates/index.js'
 
 export const showTemplatesDialog = async () => {
@@ -146,9 +146,13 @@ const resetEditor = (dialog) => {
     dialog.querySelector('#editorTitle').textContent = 'New Template'
 }
 
-const saveTemplate = (dialog) => {
-    const title = dialog.querySelector('#templateTitle').value.trim()
-    const content = dialog.querySelector('#templateContent').value.trim()
+const saveTemplate = (/** @type {HTMLElement} */ dialog) => {
+    /** @type {?HTMLInputElement} */
+    const textInput = dialog.querySelector('#templateTitle')
+    const title = textInput?.value.trim()
+    /** @type {?HTMLInputElement} */
+    const content = dialog.querySelector('#templateContent')
+    const contentValue = content?.value.trim()
 
     if (!title || !content) {
         alert('Please fill both title and content.')
@@ -166,10 +170,12 @@ const saveTemplate = (dialog) => {
 
     saveTemplates(templates)
     renderTemplatesList(dialog)
-    dialog.querySelector('#cancelTemplateBtn').click()
+    /** @type {?HTMLButtonElement} */
+    const button = dialog.querySelector('#cancelTemplateBtn')
+    button?.click()
 }
 
-const deleteTemplate = (index, dialog) => {
+const deleteTemplate = (/** @type {number} */ index, /** @type {{ dataset: { editingIndex: any; }; querySelector: (arg0: string) => { (): any; new (): any; click: { (): void; new (): any; }; }; }} */ dialog) => {
     const templates = getTemplates()
     templates.splice(index, 1)
     saveTemplates(templates)
@@ -180,17 +186,55 @@ const deleteTemplate = (index, dialog) => {
     }
 }
 
+const getTaskContext = () => {
+    const storedTask = sessionStorage.getItem(STORAGE_KEYS.SESSION.ROW_JSON)
+    if (!storedTask) return null
+
+    try {
+        return JSON.parse(storedTask)
+    } catch (error) {
+        console.error('Error parsing task context:', error)
+        return null
+    }
+}
+
+const buildTemplateContent = (content) => {
+    const task = getTaskContext()
+    const commentView = querySelectors.query(querySelectors.commentView)
+    const textarea = commentView ? querySelectors.queryFrom(commentView, querySelectors.commentTextarea) : null
+    const message = textarea?.value?.trim() || ''
+    const description = task?.fields?.[FIELD_KEYS.DESCRIPTION]?.trim() || ''
+    const comments = Array.isArray(task?.comments)
+        ? task.comments.map((/** @type {{ text: string; }} */ comment) => comment.text?.trim()).filter(Boolean)
+        : []
+
+    const sections = []
+
+    if (message) sections.push(message)
+    if (description) sections.push(`Description:\n${description}`)
+    if (comments.length) {
+        sections.push(`Comments:\n${comments.map((/** @type {string} */ comment, /** @type {number} */ index) => `${index + 1}. ${comment}`).join('\n')}`)
+    }
+    if (content) sections.push(content)
+
+    return sections.join('\n\n')
+}
+
 const useTemplate = (content, dialog) => {
-    navigator.clipboard.writeText(content).then(() => {
+    const fullContent = buildTemplateContent(content)
+
+    navigator.clipboard.writeText(fullContent).then(() => {
         dialog.close()
 
         const commentView = querySelectors.query(querySelectors.commentView)
         const textarea = querySelectors.queryFrom(commentView, querySelectors.commentTextarea)
 
         if (textarea) {
-            textarea.value = content
+            textarea.value = fullContent
             textarea.focus()
             textarea.dispatchEvent(new Event('input', { bubbles: true }))
         }
+    }).catch((error) => {
+        console.error('Error using template:', error)
     })
 }
