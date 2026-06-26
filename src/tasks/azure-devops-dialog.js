@@ -18,6 +18,7 @@ import {
     processTaskInsertion,
     startCompletionCheck
 } from '../utils/oracle-grid.js'
+import { populateCommentTextarea, buildCommentText } from '../utils/dom.js'
 
 let sortState = {
     column: 'date',
@@ -548,21 +549,61 @@ const renderTable = (workItems, sortColumn = sortState.column, ascending = sortS
         copyBtn.title = 'Copy to Clipboard'
         copyBtn.className = 'action-btn'
         copyBtn.style.marginLeft = '5px'
-        copyBtn.onclick = () => {
-            const text = `${id}: ${title.replace(':', ' ')}`
-            navigator.clipboard.writeText(text).then(() => {
-                const dialog = querySelectors.query(querySelectors.devopsDialog)
-                if (dialog) dialog.close()
+        copyBtn.onclick = async () => {
+            const fallbackText = `${id}: ${title.replace(':', ' ')}`
 
-                const commentView = querySelectors.query(querySelectors.commentView)
-                const textarea = querySelectors.queryFrom(commentView, querySelectors.commentTextarea)
-
-                if (textarea) {
-                    textarea.value = text
-                    textarea.focus()
-                    textarea.dispatchEvent(new Event('input', { bubbles: true }))
+            // Try current tasks cache first
+            const cachedData = sessionStorage.getItem(STORAGE_KEYS.SESSION.TASKS_CACHE)
+            if (cachedData) {
+                try {
+                    const tasks = JSON.parse(cachedData)
+                    const task = tasks.find(t => t.fields[FIELD_KEYS.ID] == id)
+                    if (task) {
+                        // Build the comment text directly from the task (title, description, comments)
+                        const textToCopy = buildCommentText(task) || fallbackText
+                        try { await navigator.clipboard.writeText(textToCopy) } catch (e) { console.warn('Clipboard write failed', e) }
+                        // Also attempt to populate the UI textarea (non-blocking)
+                        try { populateCommentTextarea(task) } catch (e) { /* ignore */ }
+                        const dialog = querySelectors.query(querySelectors.devopsDialog)
+                        if (dialog) dialog.close()
+                        return
+                    }
+                } catch (e) {
+                    console.error('Error using cached task for copy:', e)
                 }
-            })
+            }
+
+            // Fallback to ROW_JSON if present (current selected/added task)
+            const rowData = sessionStorage.getItem(STORAGE_KEYS.SESSION.ROW_JSON)
+            if (rowData) {
+                try {
+                    const task = JSON.parse(rowData)
+                    if (task && (task.fields?.[FIELD_KEYS.ID] == id || task.id == id)) {
+                        const textToCopy = buildCommentText(task) || fallbackText
+                        try { await navigator.clipboard.writeText(textToCopy) } catch (e) { console.warn('Clipboard write failed', e) }
+                        try { populateCommentTextarea(task) } catch (e) { /* ignore */ }
+                        const dialog = querySelectors.query(querySelectors.devopsDialog)
+                        if (dialog) dialog.close()
+                        return
+                    }
+                } catch (e) {
+                    console.error('Error using ROW_JSON for copy:', e)
+                }
+            }
+
+            // Final fallback: just copy id:title
+            try { await navigator.clipboard.writeText(fallbackText) } catch (e) { console.warn('Clipboard write failed', e) }
+            const dialog = querySelectors.query(querySelectors.devopsDialog)
+            if (dialog) dialog.close()
+
+            const commentView = querySelectors.query(querySelectors.commentView)
+            const textarea = querySelectors.queryFrom(commentView, querySelectors.commentTextarea)
+
+            if (textarea) {
+                textarea.value = fallbackText
+                textarea.focus()
+                textarea.dispatchEvent(new Event('input', { bubbles: true }))
+            }
         }
         actionTd.appendChild(copyBtn)
 

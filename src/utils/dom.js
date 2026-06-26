@@ -156,7 +156,7 @@ const normalizeText = (value) => {
     return value.replace(/<[^>]*>/g, '').replace(/\r\n/g, '\n').trim()
 }
 
-const buildCommentText = (task) => {
+export const buildCommentText = (task) => {
     const taskId = task?.fields?.[FIELD_KEYS.ID] || task?.id || ''
     const taskTitle = task?.fields?.[FIELD_KEYS.TITLE] || task?.title || ''
     const description = normalizeText(task?.fields?.[FIELD_KEYS.DESCRIPTION] || '')
