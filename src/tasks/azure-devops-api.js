@@ -95,7 +95,7 @@ const fetchWorkItemComments = async (workItemId) => {
 
     const data = await response.json();
     const comments = Array.isArray(data.comments)
-      ? data.comments.slice(0, 2)
+      ? data.comments.slice(-4)
       : [];
 
     return comments.reverse().map((comment) => ({
