@@ -154,7 +154,7 @@ const saveTemplate = (/** @type {HTMLElement} */ dialog) => {
     const content = dialog.querySelector('#templateContent')
     const contentValue = content?.value.trim()
 
-    if (!title || !content) {
+    if (!title || !contentValue) {
         alert('Please fill both title and content.')
         return
     }
@@ -163,9 +163,9 @@ const saveTemplate = (/** @type {HTMLElement} */ dialog) => {
     const editingIndex = dialog.dataset.editingIndex
 
     if (editingIndex !== undefined) {
-        templates[editingIndex] = { title, content }
+        templates[editingIndex] = { title, content: contentValue }
     } else {
-        templates.push({ title, content })
+        templates.push({ title, content: contentValue })
     }
 
     saveTemplates(templates)
