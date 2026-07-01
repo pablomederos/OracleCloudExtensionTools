@@ -200,9 +200,6 @@ const getTaskContext = () => {
 
 const buildTemplateContent = (content) => {
     const task = getTaskContext()
-    const commentView = querySelectors.query(querySelectors.commentView)
-    const textarea = commentView ? querySelectors.queryFrom(commentView, querySelectors.commentTextarea) : null
-    const message = textarea?.value?.trim() || ''
     const description = task?.fields?.[FIELD_KEYS.DESCRIPTION]?.trim() || ''
     const comments = Array.isArray(task?.comments)
         ? task.comments.map((/** @type {{ text: string; }} */ comment) => comment.text?.trim()).filter(Boolean)
@@ -210,7 +207,6 @@ const buildTemplateContent = (content) => {
 
     const sections = []
 
-    if (message) sections.push(message)
     if (description) sections.push(`Description:\n${description}`)
     if (comments.length) {
         sections.push(`Comments:\n${comments.map((/** @type {string} */ comment, /** @type {number} */ index) => `${index + 1}. ${comment}`).join('\n')}`)
